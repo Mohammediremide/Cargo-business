@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}Receipt - {{ booking.id }} - CargoFish{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-100 py-12">
+    <div class="max-w-2xl mx-auto px-4">
+
+        <div class="mb-6 flex justify-between items-center no-print">
+            <a href="/" class="text-slate-600 hover:text-deep font-bold text-sm flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back
+            </a>
+            <button onclick="window.print()"
+                class="bg-deep text-white px-5 py-2 rounded-full font-bold text-sm flex items-center gap-2 shadow-md hover:bg-slate-800 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
+                    </path>
+                </svg>
+                Print Receipt
+            </button>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200" id="receipt">
+            <div class="p-8 border-b-2 border-dashed border-slate-100">
+                <div class="flex justify-between items-start mb-10">
+                    <div>
+                        <div class="text-2xl font-black tracking-tighter text-deep mb-1">Cargo<span
+                                class="text-ocean">Fish</span></div>
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Premium Ocean Logistics
+                        </p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Receipt Number
+                        </div>
+                        <div class="text-sm font-mono font-bold text-deep">{{ booking.id }}</div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-3 mb-1">Date
+                            Issued</div>
+                        <div class="text-sm font-bold text-deep">{{ booking.date }}</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mb-4">
+                    <div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2">Customer</div>
+                        <div class="text-sm font-bold text-deep break-all">{{ booking.email }}</div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2">Shipment Route
+                        </div>
+                        <div class="text-sm font-bold text-deep">{{ booking.origin }} → {{ booking.destination }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-8">
+                <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4">Itemized Manifest</div>
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="border-b border-slate-100">
+                            <th class="py-3 font-bold text-deep">Description</th>
+                            <th class="py-3 font-bold text-deep text-center">Weight</th>
+                            <th class="py-3 font-bold text-deep text-right">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50">
+                        {% for item in booking['items'] %}
+                        <tr>
+                            <td class="py-4 text-slate-600 font-medium">{{ item.type }}</td>
+                            <td class="py-4 text-slate-600 text-center">{{ item.weight }} kg</td>
+                            <td class="py-4 text-slate-900 font-bold text-right italic">Calculated Rate</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="border-t-2 border-slate-100">
+                            <td colspan="2"
+                                class="pt-6 pb-2 text-right text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+                                Total Paid</td>
+                            <td class="pt-6 pb-2 text-right text-2xl font-black text-ocean">NGN {{
+                                "{:,.2f}".format(booking.total_price) }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"
+                                class="text-right text-slate-400 font-bold uppercase tracking-widest text-[10px]">Method
+                            </td>
+                            <td class="text-right text-xs font-bold text-slate-600 uppercase tracking-widest">{{
+                                booking.payment_method }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"
+                                class="text-right text-slate-400 font-bold uppercase tracking-widest text-[10px]">
+                                Reference</td>
+                            <td class="text-right text-[10px] font-mono text-slate-400">{{ booking.payment_ref }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <div class="bg-slate-50 p-8 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-100">
+                        <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7">
+                            </path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-xs font-bold text-deep">Payment Verified</div>
+                        <p class="text-[10px] text-slate-400 tracking-tight">Status: {{ booking.status }}</p>
+                    </div>
+                </div>
+                <div class="text-right opacity-30 grayscale saturate-0 scale-75">
+                    <div class="text-[10px] font-bold text-slate-400 mb-1">STAMP</div>
+                    <div class="border-2 border-slate-400 rounded p-1 text-[10px] font-black uppercase">PAID IN FULL
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+            <p>Thank you for choosing CargoFish for your logistics needs.</p>
+            <p class="mt-2 text-[8px] opacity-50">This is a system generated document. For inquiries, contact
+                support@cargofish.com</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+
+        body {
+            background: white !important;
+            margin: 0;
+            padding: 0;
+        }
+
+        .min-h-screen {
+            min-height: 0 !important;
+            background: white !important;
+            padding: 0 !important;
+        }
+
+        .shadow-xl {
+            box-shadow: none !important;
+            border: 1px solid #eee !important;
+        }
+
+        nav,
+        footer {
+            display: none !important;
+        }
+
+        main {
+            padding-top: 0 !important;
+        }
+    }
+</style>
+{% endblock %}

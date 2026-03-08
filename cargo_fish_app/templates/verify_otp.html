@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Verify Signup - CargoFish{% endblock %}
+
+{% block content %}
+<div class="min-h-[80vh] flex items-center justify-center bg-slate-50 py-12 px-4">
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl border border-slate-100 p-10">
+        <div class="text-center mb-10">
+            <h1 class="text-3xl font-bold text-deep mb-2">Verify Your Account</h1>
+            <p class="text-slate-500">We've sent a 6-digit code to your email. Enter it below to complete signup.</p>
+        </div>
+
+        <form method="POST" class="space-y-6">
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Verification Code</label>
+                <input type="text" name="otp" required maxlength="6" placeholder="123456"
+                    class="w-full text-center tracking-widest text-2xl px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:ring-4 focus:ring-ocean/10 focus:border-ocean outline-none transition-all">
+            </div>
+
+            <button type="submit"
+                class="w-full bg-deep text-white py-4 rounded-xl font-bold text-lg hover:bg-slate-800 transition-all shadow-lg hover:shadow-deep/20 mt-4">
+                Verify Code
+            </button>
+        </form>
+
+        <form method="POST" class="mt-3">
+            <input type="hidden" name="action" value="resend">
+            <button type="submit" class="w-full text-sm text-ocean font-semibold hover:underline">Resend OTP</button>
+        </form>
+
+        {% if resend_in %}
+        <p class="text-center mt-2 text-xs text-slate-500">Please wait {{ resend_in }}s before resending again.</p>
+        {% endif %}
+
+        <p class="text-center mt-6 text-sm text-slate-500">
+            Wrong details? <a href="{{ url_for('user_signup') }}" class="text-ocean font-bold hover:underline">Sign Up Again</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

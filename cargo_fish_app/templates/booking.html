@@ -1,0 +1,678 @@
+{% extends 'base.html' %}
+
+{% block title %}Book Shipment - CargoFish{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-50 py-12">
+    <div class="max-w-3xl mx-auto px-4">
+
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-deep">Book a Shipment</h1>
+            <p class="text-slate-500 mt-2">Complete the form below to schedule your logistics.</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100">
+            <!-- Form Header -->
+            <div class="bg-deep p-6 border-b border-slate-800 flex justify-between items-center">
+                <div>
+                    <h2 class="text-xl font-bold text-white">New Booking Request</h2>
+                </div>
+                <div class="text-ocean text-sm font-medium">
+                    Secure Transaction <span class="text-slate-400 ml-1">🔒</span>
+                </div>
+            </div>
+
+            {% if not user.get('is_verified', False) %}
+            <div class="bg-amber-50 border-l-4 border-amber-500 p-6 m-6 rounded-r-xl">
+                <div class="flex items-start gap-3">
+                    <svg class="w-6 h-6 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                        </path>
+                    </svg>
+                    <div>
+                        <h3 class="text-amber-800 font-bold text-lg">Account Pending Verification</h3>
+                        <p class="text-amber-700 text-sm mt-1">
+                            Your account is currently under review. You cannot schedule shipments or process payments
+                            until an administrator verifies your account. Please check back later.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <form id="bookingForm"
+                class="p-8 {% if not user.get('is_verified', False) %}opacity-50 pointer-events-none grayscale-[0.5]{% endif %}">
+                <!-- Step 1: Cargo Details -->
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center border-b pb-3">
+                        <h3 class="text-lg font-semibold text-deep flex items-center gap-2">
+                            <span
+                                class="w-6 h-6 rounded-full bg-ocean text-white text-xs flex items-center justify-center">1</span>
+                            Cargo Information
+                        </h3>
+                        <button type="button" id="addItemBtn"
+                            class="text-sm bg-ocean/10 text-ocean hover:bg-ocean hover:text-white px-3 py-1 rounded-lg transition-all font-medium flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Add Another Item
+                        </button>
+                    </div>
+
+                    <div id="itemsContainer" class="space-y-4">
+                        <!-- Item Row -->
+                        <div class="item-row bg-slate-50 p-4 rounded-xl border border-slate-200 relative group">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label
+                                        class="block text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wider">Cargo
+                                        Type</label>
+                                    <div class="relative">
+                                        <select name="cargoType"
+                                            class="cargo-type w-full rounded-lg border-slate-200 border bg-white px-4 py-2.5 focus:ring-2 focus:ring-ocean focus:border-transparent outline-none transition-all appearance-none text-sm"
+                                            required>
+                                            <option value="">Select Type...</option>
+                                            {% for type, rate in pricing_config.items() %}
+                                            <option value="{{ type }}">{{ type }} (NGN {{ rate }}/kg)</option>
+                                            {% endfor %}
+                                        </select>
+                                        <div
+                                            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M19 9l-7 7-7-7"></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label
+                                        class="block text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wider">Weight
+                                        (kg)</label>
+                                    <input type="number" name="weight"
+                                        class="cargo-weight w-full rounded-lg border-slate-200 border bg-white px-4 py-2.5 focus:ring-2 focus:ring-ocean focus:border-transparent outline-none transition-all text-sm"
+                                        placeholder="e.g. 50" min="1" step="0.1" required>
+                                </div>
+                            </div>
+                            <div class="text-[10px] text-slate-400 mt-1">User country: {{ user.country_name or "Not set"
+                                }}</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Special Instructions</label>
+                        <textarea id="instructions"
+                            class="w-full rounded-lg border-slate-200 border bg-slate-50 px-4 py-3 focus:ring-2 focus:ring-ocean focus:border-transparent outline-none transition-all h-24"
+                            placeholder="Temperature requirements, handling instructions..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Step 2: Route Details -->
+                <div class="space-y-6 mt-10">
+                    <h3 class="text-lg font-semibold text-deep border-b pb-3 flex items-center gap-2">
+                        <span
+                            class="w-6 h-6 rounded-full bg-ocean text-white text-xs flex items-center justify-center">2</span>
+                        Route & Contact
+                    </h3>
+
+                    <div class="bg-ocean/5 p-4 rounded-xl border border-ocean/10 mb-6 flex items-center gap-3">
+                        <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm">
+                            <svg class="w-5 h-5 text-ocean" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                                    clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Booking as</div>
+                            <div class="text-sm font-bold text-deep uppercase">{{ user.full_name }} <span
+                                    class="text-slate-400 font-normal">({{ user.email }})</span></div>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex flex-wrap gap-2" id="routeModeToggle">
+                            <button type="button" data-mode="same"
+                                class="route-mode-btn px-4 py-2 rounded-full text-xs font-bold border border-slate-200 text-slate-600 hover:border-ocean hover:text-ocean transition-all">Same
+                                Country</button>
+                            <button type="button" data-mode="diff"
+                                class="route-mode-btn px-4 py-2 rounded-full text-xs font-bold border border-slate-200 text-slate-600 hover:border-ocean hover:text-ocean transition-all">Different
+                                Countries</button>
+                            <input type="hidden" id="route_mode" name="route_mode" value="same">
+                        </div>
+                        <div id="sameCountryInfo" class="text-xs text-slate-500">Using country: {{ user.country_name or
+                            'Not set' }}</div>
+                        <div id="diffCountryFields" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Origin Country</label>
+                                <div class="relative">
+                                    <select id="origin_country"
+                                        class="w-full rounded-lg border-slate-200 border bg-slate-50 px-4 py-3 focus:ring-2 focus:ring-ocean outline-none transition-all appearance-none">
+                                        <option value="">Select Origin Country</option>
+                                    </select>
+                                    <div
+                                        class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Destination Country</label>
+                                <div class="relative">
+                                    <select id="destination_country"
+                                        class="w-full rounded-lg border-slate-200 border bg-slate-50 px-4 py-3 focus:ring-2 focus:ring-ocean outline-none transition-all appearance-none">
+                                        <option value="">Select Destination Country</option>
+                                    </select>
+                                    <div
+                                        class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Origin
+                                    State/Province</label>
+                                <div class="relative">
+                                    <select id="origin_state" required
+                                        class="w-full rounded-lg border-slate-200 border bg-slate-50 px-4 py-3 focus:ring-2 focus:ring-ocean outline-none transition-all appearance-none">
+                                        <option value="">Select Departure State/Province</option>
+                                    </select>
+                                    <div
+                                        class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-2">Destination
+                                    State/Province</label>
+                                <div class="relative">
+                                    <select id="destination_state" required
+                                        class="w-full rounded-lg border-slate-200 border bg-slate-50 px-4 py-3 focus:ring-2 focus:ring-ocean outline-none transition-all appearance-none">
+                                        <option value="">Select Arrival State/Province</option>
+                                    </select>
+                                    <div
+                                        class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-2 mt-4">Destination Full
+                                Address</label>
+                            <textarea id="destination_address" required
+                                class="w-full rounded-lg border-slate-200 border bg-slate-50 px-4 py-3 focus:ring-2 focus:ring-ocean outline-none transition-all h-[112px]"
+                                placeholder="Enter complete delivery address..."></textarea>
+                        </div>
+                    </div>
+                    <div id="stateLoadNote"
+                        class="hidden mt-4 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3">If
+                        states do not load, refresh the page.</div>
+                </div>
+
+                <!-- Step 3: Payment -->
+                <div class="space-y-6 mt-10">
+                    <h3 class="text-lg font-semibold text-deep border-b pb-3 flex items-center gap-2">
+                        <span
+                            class="w-6 h-6 rounded-full bg-ocean text-white text-xs flex items-center justify-center">3</span>
+                        Secure Payment
+                    </h3>
+
+                    <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                        <div class="flex justify-between items-center text-xl font-bold text-deep pt-2">
+                            <span>Total Amount Due:</span>
+                            <span id="totalDisplay" class="text-ocean">NGN 0.00</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2">Payments are processed securely via Kora (Korapay). You
+                            will be redirected to complete payment, and your cargo will be scheduled once it is
+                            confirmed.</p>
+                    </div>
+                </div>
+
+                <div class="mt-10 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                    <h3 class="text-sm font-bold text-deep mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-ocean" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z">
+                            </path>
+                        </svg>
+                        Kora Checkout
+                    </h3>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        You will be redirected to Kora's secure checkout to complete payment.
+                        Once payment is confirmed, your shipment will be scheduled automatically.
+                    </p>
+                </div>
+
+                <div class="mt-6">
+                    <button type="submit" id="submitBtn" data-no-loading {% if not user.get('is_verified', False)
+                        %}disabled{% endif %}
+                        class="w-full bg-deep text-white py-4 rounded-xl font-bold text-lg hover:bg-slate-800 transition-all shadow-xl hover:shadow-deep/20 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                        <span id="btnSpinner"
+                            class="hidden h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                        <span id="btnText">Proceed to Kora Checkout</span>
+                        <svg id="btnIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 5l7 7-7 7M5 5l7 7-7 7">
+                            </path>
+                        </svg>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Success Modal -->
+        <div id="successModal"
+            class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+            <div
+                class="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl transform transition-all duration-300 scale-95 translate-y-4">
+                <div
+                    class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-lg">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <h2 class="text-xl font-bold text-center text-deep mb-1">Transaction Successful!</h2>
+                <p class="text-center text-xs text-slate-500 mb-6">Your payment has been verified and shipment is
+                    scheduled.</p>
+                <div class="bg-slate-50 rounded-xl p-4 mb-6 border border-slate-100">
+                    <div class="text-[8px] uppercase font-bold text-slate-400 text-center mb-1 tracking-widest">Tracking
+                        Reference</div>
+                    <div id="trackingIdDisplay" class="text-lg font-mono text-center font-bold text-ocean">CF-XXXXXXXX
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <button id="viewReceiptBtn"
+                        class="w-full bg-ocean text-white py-3 rounded-xl font-bold text-sm hover:bg-sky-500 transition-all shadow-lg shadow-ocean/10">
+                        View Receipt
+                    </button>
+                    <button onclick="window.location.href='/'"
+                        class="w-full bg-slate-100 text-slate-600 py-3 rounded-xl font-bold text-sm hover:bg-slate-200 transition-all">
+                        Back to Home
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const userCountryCode = "{{ user.country_code or '' }}";
+    const userCountryName = "{{ user.country_name or '' }}";
+
+    function showCountryError(select, message) {
+        if (!select) return;
+        select.innerHTML = '';
+        var opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = message || 'Unable to load countries';
+        select.appendChild(opt);
+    }
+
+    function populateCountrySelect(select, countries, placeholder, selectedCode) {
+        select.innerHTML = '';
+        var opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = placeholder;
+        select.appendChild(opt);
+        if (!Array.isArray(countries) || countries.length === 0) {
+            return;
+        }
+        countries.forEach(function (c) {
+            var o = document.createElement('option');
+            o.value = c.code || '';
+            o.textContent = c.name || '';
+            if (selectedCode && o.value === selectedCode) {
+                o.selected = true;
+            }
+            select.appendChild(o);
+        });
+    }
+
+    function populateStateSelect(select, states, placeholder) {
+        select.innerHTML = '';
+        var opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = placeholder;
+        select.appendChild(opt);
+        if (!Array.isArray(states) || states.length === 0) {
+            var empty = document.createElement('option');
+            empty.value = '';
+            empty.textContent = 'No states found for this country';
+            select.appendChild(empty);
+            return;
+        }
+        states.forEach(function (s) {
+            var o = document.createElement('option');
+            o.value = s.name || '';
+            o.textContent = s.name || '';
+            select.appendChild(o);
+        });
+    }
+
+    function setStateNote(show, message) {
+        var note = document.getElementById('stateLoadNote');
+        if (!note) return;
+        if (message) note.textContent = message;
+        if (show) {
+            note.classList.remove('hidden');
+        } else {
+            note.classList.add('hidden');
+        }
+    }
+
+    function loadStatesForCountry(countryCode, targetSelect, placeholder) {
+        if (!targetSelect) return;
+        setStateNote(false);
+        if (!countryCode) {
+            populateStateSelect(targetSelect, [], placeholder);
+            return;
+        }
+        fetch('/api/geo/states?country=' + encodeURIComponent(countryCode))
+            .then(function (res) {
+                return res.json().then(function (data) {
+                    return { ok: res.ok, data: data };
+                });
+            })
+            .then(function (result) {
+                var data = result.data;
+                if (!result.ok) {
+                    var msg = (data && data.error) || 'Unable to load states';
+                    populateStateSelect(targetSelect, [], msg);
+                    setStateNote(true, 'If states do not load, refresh the page.');
+                    return;
+                }
+                populateStateSelect(targetSelect, data, placeholder);
+                setStateNote(false);
+            })
+            .catch(function () {
+                populateStateSelect(targetSelect, [], 'Unable to load states');
+                setStateNote(true, 'If states do not load, refresh the page.');
+            });
+    }
+
+    function setRouteMode(mode) {
+        var modeInput = document.getElementById('route_mode');
+        var diffFields = document.getElementById('diffCountryFields');
+        var sameInfo = document.getElementById('sameCountryInfo');
+        var originCountry = document.getElementById('origin_country');
+        var destinationCountry = document.getElementById('destination_country');
+        if (modeInput) modeInput.value = mode;
+
+        var buttons = document.querySelectorAll('.route-mode-btn');
+        buttons.forEach(function (btn) {
+            if (btn.getAttribute('data-mode') === mode) {
+                btn.classList.add('bg-ocean', 'text-white', 'border-ocean');
+                btn.classList.remove('text-slate-600');
+            } else {
+                btn.classList.remove('bg-ocean', 'text-white', 'border-ocean');
+                btn.classList.add('text-slate-600');
+            }
+        });
+
+        if (mode === 'same') {
+            if (diffFields) diffFields.classList.add('hidden');
+            if (sameInfo) sameInfo.classList.remove('hidden');
+            if (originCountry) { originCountry.disabled = true; originCountry.value = userCountryCode || ''; }
+            if (destinationCountry) { destinationCountry.disabled = true; destinationCountry.value = userCountryCode || ''; }
+        } else {
+            if (diffFields) diffFields.classList.remove('hidden');
+            if (sameInfo) sameInfo.classList.add('hidden');
+            if (originCountry) originCountry.disabled = false;
+            if (destinationCountry) destinationCountry.disabled = false;
+        }
+    }
+
+    function loadCountriesAndInit() {
+        var originCountry = document.getElementById('origin_country');
+        var destinationCountry = document.getElementById('destination_country');
+        var originState = document.getElementById('origin_state');
+        var destinationState = document.getElementById('destination_state');
+        if (!originCountry || !destinationCountry || !originState || !destinationState) return;
+
+        var defaultMode = userCountryCode ? 'same' : 'diff';
+        setRouteMode(defaultMode);
+
+        fetch('/api/geo/countries')
+            .then(function (res) {
+                return res.json().then(function (data) {
+                    return { ok: res.ok, data: data };
+                });
+            })
+            .then(function (result) {
+                var data = result.data;
+                if (!result.ok) {
+                    var msg = (data && data.error) || 'Unable to load countries';
+                    showCountryError(originCountry, msg);
+                    showCountryError(destinationCountry, msg);
+                    setStateNote(true, 'If states do not load, refresh the page.');
+                    return;
+                }
+                populateCountrySelect(originCountry, data, 'Select Origin Country', userCountryCode);
+                populateCountrySelect(destinationCountry, data, 'Select Destination Country', userCountryCode);
+
+                if (defaultMode === 'same') {
+                    loadStatesForCountry(userCountryCode, originState, 'Select Departure State/Province');
+                    loadStatesForCountry(userCountryCode, destinationState, 'Select Arrival State/Province');
+                } else {
+                    loadStatesForCountry(originCountry.value, originState, 'Select Departure State/Province');
+                    loadStatesForCountry(destinationCountry.value, destinationState, 'Select Arrival State/Province');
+                }
+            })
+            .catch(function () {
+                showCountryError(originCountry, 'Unable to load countries');
+                showCountryError(destinationCountry, 'Unable to load countries');
+                setStateNote(true, 'If states do not load, refresh the page.');
+            });
+
+        originCountry.addEventListener('change', function () {
+            if (document.getElementById('route_mode').value !== 'diff') return;
+            loadStatesForCountry(originCountry.value, originState, 'Select Departure State/Province');
+        });
+        destinationCountry.addEventListener('change', function () {
+            if (document.getElementById('route_mode').value !== 'diff') return;
+            loadStatesForCountry(destinationCountry.value, destinationState, 'Select Arrival State/Province');
+        });
+
+        var buttons = document.querySelectorAll('.route-mode-btn');
+        buttons.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var mode = btn.getAttribute('data-mode');
+                setRouteMode(mode);
+                if (mode === 'same') {
+                    loadStatesForCountry(userCountryCode, originState, 'Select Departure State/Province');
+                    loadStatesForCountry(userCountryCode, destinationState, 'Select Arrival State/Province');
+                } else {
+                    loadStatesForCountry(originCountry.value, originState, 'Select Departure State/Province');
+                    loadStatesForCountry(destinationCountry.value, destinationState, 'Select Arrival State/Province');
+                }
+            });
+        });
+    }
+
+    loadCountriesAndInit();
+
+    const pricingConfig = JSON.parse('{{ pricing_config | tojson | safe }}');
+    const itemsContainer = document.getElementById('itemsContainer');
+    const addItemBtn = document.getElementById('addItemBtn');
+    const totalDisplay = document.getElementById('totalDisplay');
+    const bookingForm = document.getElementById('bookingForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const btnSpinner = document.getElementById('btnSpinner');
+    const btnIcon = document.getElementById('btnIcon');
+
+    let currentTotal = 0;
+
+    function setSubmitBtnState(isLoading, text) {
+        if (!submitBtn) return;
+        submitBtn.disabled = isLoading;
+        if (text) btnText.innerText = text;
+        if (btnSpinner) btnSpinner.classList.toggle('hidden', !isLoading);
+        if (btnIcon) btnIcon.classList.toggle('hidden', isLoading);
+    }
+
+    function calculateTotal() {
+        let total = 0;
+        const rows = document.querySelectorAll('.item-row');
+        rows.forEach(row => {
+            const typeSelect = row.querySelector('.cargo-type');
+            const weightInput = row.querySelector('.cargo-weight');
+            const type = typeSelect.value;
+            const weight = parseFloat(weightInput.value) || 0;
+            const rate = pricingConfig[type] || 0;
+            total += rate * weight;
+        });
+        currentTotal = total;
+        totalDisplay.innerText = `NGN ${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+    }
+
+    function addItemRow() {
+        const row = document.createElement('div');
+        row.className = 'item-row bg-white p-4 rounded-xl border border-slate-100 relative group animate-in fade-in slide-in-from-top-2 duration-300 mb-4 shadow-sm';
+        row.innerHTML = `
+            <button type="button" class="remove-item absolute -right-2 -top-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase">Cargo Type</label>
+                    <select name="cargoType" class="cargo-type w-full rounded-lg border-slate-200 border bg-slate-50 px-4 py-2.5 focus:ring-2 focus:ring-ocean outline-none transition-all text-sm" required>
+                        <option value="">Select Type...</option>
+                        ${Object.entries(pricingConfig).map(([type, rate]) => `<option value="${type}">${type}</option>`).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase">Weight (kg)</label>
+                    <input type="number" name="weight" class="cargo-weight w-full rounded-lg border-slate-200 border bg-slate-50 px-4 py-3 focus:ring-2 focus:ring-ocean outline-none transition-all text-sm" placeholder="0.0" min="0.1" step="0.1" required>
+                </div>
+            </div>
+        `;
+        itemsContainer.appendChild(row);
+
+        row.querySelector('.remove-item').addEventListener('click', () => {
+            row.remove();
+            calculateTotal();
+        });
+
+        row.querySelectorAll('select, input').forEach(el => {
+            el.addEventListener('input', calculateTotal);
+        });
+    }
+
+    document.querySelectorAll('.cargo-type, .cargo-weight').forEach(el => {
+        el.addEventListener('input', calculateTotal);
+    });
+
+    if (addItemBtn) addItemBtn.addEventListener('click', addItemRow);
+
+    function buildRouteData() {
+        var originCountry = document.getElementById('origin_country');
+        var destinationCountry = document.getElementById('destination_country');
+        var originState = document.getElementById('origin_state');
+        var destinationState = document.getElementById('destination_state');
+        var destinationAddress = document.getElementById('destination_address');
+
+        var routeMode = document.getElementById('route_mode') ? document.getElementById('route_mode').value : 'same';
+        var originCountryName = (originCountry && originCountry.value) ? originCountry.options[originCountry.selectedIndex].text : '';
+        var destinationCountryName = (destinationCountry && destinationCountry.value) ? destinationCountry.options[destinationCountry.selectedIndex].text : '';
+        if (routeMode === 'same') {
+            originCountryName = userCountryName || originCountryName;
+            destinationCountryName = userCountryName || destinationCountryName;
+        }
+        var originStateVal = originState ? originState.value : '';
+        var destinationStateVal = destinationState ? destinationState.value : '';
+        var destinationAddressVal = destinationAddress ? destinationAddress.value : '';
+
+        var origin = [originStateVal, originCountryName].filter(Boolean).join(', ');
+        var destinationBase = [destinationStateVal, destinationCountryName].filter(Boolean).join(', ');
+        var destination = destinationAddressVal ? (destinationBase ? (destinationBase + ' - ' + destinationAddressVal) : destinationAddressVal) : destinationBase;
+
+        return {
+            origin: origin,
+            destination: destination,
+            origin_country_code: (routeMode === 'same') ? (userCountryCode || '') : (originCountry ? originCountry.value : ''),
+            origin_country_name: originCountryName,
+            origin_state: originStateVal,
+            destination_country_code: (routeMode === 'same') ? (userCountryCode || '') : (destinationCountry ? destinationCountry.value : ''),
+            destination_country_name: destinationCountryName,
+            destination_state: destinationStateVal,
+            destination_address: destinationAddressVal
+        };
+    }
+
+    function showSuccessModal(bookingId) {
+        document.getElementById('trackingIdDisplay').innerText = bookingId;
+        document.getElementById('viewReceiptBtn').onclick = () => window.location.href = `/receipt/${bookingId}`;
+        const modal = document.getElementById('successModal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.querySelector('.scale-95').classList.remove('scale-95', 'translate-y-4');
+        }, 50);
+    }
+
+    function resetSubmitBtn() {
+        setSubmitBtnState(false, "Proceed to Kora Checkout");
+    }
+
+    function startKoraCheckout() {
+        setSubmitBtnState(true, "Redirecting to Kora...");
+        if (currentTotal <= 0) {
+            alert("Please add items to calculate price.");
+            return resetSubmitBtn();
+        }
+
+        const routeData = buildRouteData();
+        const items = [];
+        document.querySelectorAll('.item-row').forEach(row => {
+            const type = row.querySelector('.cargo-type').value;
+            const weight = row.querySelector('.cargo-weight').value;
+            if (type && weight) items.push({ type, weight });
+        });
+
+        fetch('/kora/initialize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Object.assign({ items }, routeData))
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success' && data.checkout_url) {
+                    window.location.href = data.checkout_url;
+                } else {
+                    alert("Payment initialization failed: " + (data.message || "Please try again."));
+                    resetSubmitBtn();
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("Error initializing payment.");
+                resetSubmitBtn();
+            });
+    }
+
+    bookingForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+        startKoraCheckout();
+    });
+</script>
+{% endblock %}

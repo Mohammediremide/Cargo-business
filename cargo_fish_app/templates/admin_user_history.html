@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block title %}User History - CargoFish{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-50 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-deep">User History</h1>
+                <p class="text-slate-500 mt-1">All bookings, payments, and account details for {{ user.full_name }}</p>
+            </div>
+            <a href="{{ url_for('admin_dashboard') }}"
+                class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-all">
+                Back to Dashboard
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
+                <h2 class="text-lg font-bold text-deep mb-4">Profile</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Full Name</div>
+                        <div class="text-deep font-semibold">{{ user.full_name }}</div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Username</div>
+                        <div class="text-deep font-mono">{{ user.username }}</div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Email</div>
+                        <div class="text-ocean font-medium">{{ user.email }}</div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Joined</div>
+                        <div class="text-deep">{{ joined_at }}</div>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center gap-2 text-xs">
+                    <span
+                        class="px-2.5 py-0.5 rounded-full font-bold {% if user.get('is_verified', False) %}bg-green-100 text-green-700{% else %}bg-slate-100 text-slate-600{% endif %}">
+                        {% if user.get('is_verified', False) %}Verified{% else %}Unverified{% endif %}
+                    </span>
+                    <span
+                        class="px-2.5 py-0.5 rounded-full font-bold {% if user.get('is_admin', False) %}bg-purple-100 text-purple-700{% else %}bg-blue-50 text-blue-600{% endif %}">
+                        {% if user.get('is_admin', False) %}Admin{% else %}Customer{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <h2 class="text-lg font-bold text-deep mb-4">Summary</h2>
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between"><span class="text-slate-500">Total Bookings</span><span
+                            class="font-bold text-deep">{{ user_bookings|length }}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Delivered</span><span
+                            class="font-bold text-green-600">{{ delivered_count }}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Cancelled</span><span
+                            class="font-bold text-red-500">{{ cancelled_count }}</span></div>
+                    <div class="border-t border-slate-100 pt-3 flex justify-between"><span class="text-slate-500">Total
+                            Paid</span><span class="font-bold text-deep">NGN {{ "{:,.2f}".format(total_paid) }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+            <div class="px-6 py-5 border-b border-slate-100">
+                <h2 class="text-lg font-bold text-deep">Booking & Payment History</h2>
+            </div>
+            <!-- Desktop Table -->
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-100">
+                            <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Booking
+                                ID</th>
+                            <th class="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Route
+                            </th>
+                            <th class="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Payment
+                            </th>
+                            <th class="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date
+                            </th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status
+                            </th>
+                            <th
+                                class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">
+                                Receipt</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50">
+                        {% for booking in user_bookings %}
+                        <tr class="hover:bg-slate-50 transition-all">
+                            <td class="px-6 py-4">
+                                <div class="font-mono text-xs font-bold text-deep">{{ booking.id }}</div>
+                                <div class="text-[10px] text-slate-400">{{ booking.payment_ref or 'N/A' }}</div>
+                            </td>
+                            <td class="px-4 py-4 text-sm text-slate-700">{{ booking.origin }} -> {{ booking.destination
+                                }}</td>
+                            <td class="px-4 py-4 text-sm">
+                                <div class="font-bold text-deep">NGN {{ "{:,.2f}".format(booking.total_price) }}</div>
+                                <div class="text-[10px] text-slate-400">{{ booking.payment_method or 'Unknown' }}</div>
+                            </td>
+                            <td class="px-4 py-4 text-sm text-slate-600">{{ booking.date }}</td>
+                            <td
+                                class="px-6 py-4 text-xs font-bold {% if booking.status == 'Delivered' %}text-green-600{% elif booking.status == 'Cancelled' %}text-red-500{% else %}text-slate-600{% endif %}">
+                                {{ booking.status }}</td>
+                            <td class="px-6 py-4 text-right">
+                                <a href="{{ url_for('receipt', booking_id=booking.id) }}" target="_blank"
+                                    class="px-3 py-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg text-xs font-bold transition-colors">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile Card View -->
+            <div class="md:hidden divide-y divide-slate-100">
+                {% for booking in user_bookings %}
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <div class="font-mono text-xs font-bold text-deep">{{ booking.id }}</div>
+                            <div class="text-[10px] text-slate-400 mt-1">Ref: {{ booking.payment_ref or 'N/A' }}</div>
+                        </div>
+                        <div
+                            class="text-[10px] font-bold px-2 py-0.5 rounded-full {% if booking.status == 'Delivered' %}bg-green-100 text-green-700{% elif booking.status == 'Cancelled' %}bg-red-100 text-red-700{% else %}bg-slate-100 text-slate-600{% endif %} uppercase">
+                            {{ booking.status }}
+                        </div>
+                    </div>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Route:</span>
+                            <span class="text-deep font-semibold text-right">{{ booking.origin }} → {{
+                                booking.destination }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Payment:</span>
+                            <span class="text-ocean font-bold">NGN {{ "{:,.2f}".format(booking.total_price) }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Date:</span>
+                            <span class="text-slate-600">{{ booking.date }}</span>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('receipt', booking_id=booking.id) }}" target="_blank"
+                        class="mt-6 block w-full text-center py-2.5 bg-slate-50 text-slate-700 rounded-xl font-bold text-xs border border-slate-200">
+                        View Receipt
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if not user_bookings %}
+            <div class="p-12 text-center text-slate-400 italic text-sm">
+                No bookings/payments found for this user.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

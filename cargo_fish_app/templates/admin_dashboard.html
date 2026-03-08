@@ -1,0 +1,731 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - CargoFish{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-50 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-deep">Shipment Management</h1>
+                <p class="text-slate-500 mt-1">Hello, Moh. Manage all cargo bookings and track their status.</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a href="{{ url_for('admin_transactions') }}"
+                    class="px-4 py-2 bg-ocean text-white rounded-xl text-sm font-semibold hover:bg-sky-500 transition-all flex items-center gap-2 shadow-lg shadow-ocean/20">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                        </path>
+                    </svg>
+                    Transactions
+                </a>
+                <a href="{{ url_for('admin_logout') }}"
+                    class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-all flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                        </path>
+                    </svg>
+                    Logout
+                </a>
+                <div
+                    class="h-10 w-10 bg-ocean rounded-full flex items-center justify-center text-white font-bold text-lg shadow-inner ring-4 ring-white">
+                    M
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="text-[10px] uppercase font-bold text-slate-400 mb-1 tracking-widest">Total Revenue</div>
+                <div class="text-3xl font-bold text-deep">NGN {{ "{:,.2f}".format(total_revenue) }}</div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <svg class="w-16 h-16" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M21 18H3V6h18v12zM12 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                    </svg>
+                </div>
+                <div class="text-[10px] uppercase font-bold text-ocean mb-1 tracking-widest">Available Balance</div>
+                <div class="text-3xl font-bold text-ocean mb-3">NGN {{ "{:,.2f}".format(available_balance) }}</div>
+                <button onclick="openWithdrawModal()"
+                    class="w-full py-2 bg-ocean text-white rounded-xl text-xs font-bold hover:bg-sky-500 transition-all shadow-lg shadow-ocean/20">
+                    Withdraw Funds
+                </button>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="text-[10px] uppercase font-bold text-amber-400 mb-1 tracking-widest">In Progress</div>
+                <div class="text-3xl font-bold text-deep">
+                    {{ in_progress_count }}
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="text-[10px] uppercase font-bold text-green-400 mb-1 tracking-widest">Completed</div>
+                <div class="text-3xl font-bold text-green-500">
+                    {{ completed_count }}
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
+            <!-- Bookings Table -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Recent Shipments Header -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <h3 class="text-lg font-bold text-deep flex items-center gap-2">
+                        <svg class="w-5 h-5 text-ocean" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                            </path>
+                        </svg>
+                        Recent Shipments
+                    </h3>
+                    <a href="/admin/export/bookings"
+                        class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-200 transition-all border border-slate-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        Download Report (CSV)
+                    </a>
+                </div>
+                <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+                    <!-- Desktop Table -->
+                    <div class="hidden md:block overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-100">
+                                    <th
+                                        class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                        ID</th>
+                                    <th
+                                        class="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                        Route</th>
+                                    <th
+                                        class="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                        Order Details</th>
+                                    <th
+                                        class="px-4 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">
+                                        Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-50">
+                                {% for booking in bookings %}
+                                <tr class="hover:bg-slate-50 transition-all group">
+                                    <td class="px-6 py-4">
+                                        <div class="font-mono font-bold text-deep text-xs">{{ booking.id }}</div>
+                                        <div
+                                            class="text-[10px] text-ocean font-bold flex items-center gap-1 uppercase mt-1">
+                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd"
+                                                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                                                    clip-rule="evenodd"></path>
+                                            </svg>
+                                            {{ booking.customer_name }}
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-4 text-xs text-slate-600">
+                                        <div class="font-bold text-deep">{{ booking.origin }} → {{ booking.destination
+                                            }}</div>
+                                        <div
+                                            class="text-[9px] {% if booking.status == 'Delivered' %}text-emerald-500 font-extrabold{% else %}text-slate-400{% endif %} mt-1 uppercase">
+                                            {{ booking.status }}</div>
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        <div class="space-y-1">
+                                            {% for item in booking['items'] %}
+                                            <div class="text-[10px] font-medium text-slate-600 flex items-center gap-1">
+                                                <span class="w-1 h-1 bg-ocean rounded-full"></span>
+                                                <span class="font-bold text-deep">{{ item.weight }}kg</span> {{
+                                                item.type }}
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 text-right">
+                                        <div class="flex justify-end gap-2">
+                                            <select onchange="updateStatus('{{ booking.id }}', this.value)"
+                                                class="text-[10px] font-bold border-slate-200 rounded-lg py-1 px-2 focus:ring-1 focus:ring-ocean outline-none transition-all">
+                                                <option value="" disabled selected>Status...</option>
+                                                <option value="Accepted">Accept</option>
+                                                <option value="In Transit">In Transit</option>
+                                                <option value="Near Destination">Near Port</option>
+                                                <option value="Delivered">Delivered</option>
+                                                <option value="Cancelled">Cancel</option>
+                                            </select>
+                                            <a href="/receipt/{{ booking.id }}" target="_blank"
+                                                class="p-2 bg-slate-100 rounded-lg text-slate-400 hover:text-ocean transition-all">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
+                                                    </path>
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Mobile Cards -->
+                    <div class="md:hidden divide-y divide-slate-100">
+                        {% for booking in bookings %}
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <div class="font-mono font-bold text-deep text-xs">{{ booking.id }}</div>
+                                    <div class="text-[10px] text-ocean font-bold uppercase mt-1">
+                                        {{ booking.customer_name }}
+                                    </div>
+                                </div>
+                                <div
+                                    class="text-[9px] px-2 py-0.5 rounded-full {% if booking.status == 'Delivered' %}bg-emerald-100 text-emerald-600 font-extrabold{% else %}bg-slate-100 text-slate-500{% endif %} uppercase">
+                                    {{ booking.status }}
+                                </div>
+                            </div>
+                            <div class="text-sm text-slate-600 mb-4">
+                                <div class="font-bold text-deep flex items-center gap-2">
+                                    {{ booking.origin }}
+                                    <svg class="w-3 h-3 text-slate-300" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                    {{ booking.destination }}
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mb-6">
+                                {% for item in booking['items'] %}
+                                <div
+                                    class="text-[10px] font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-100 flex items-center gap-1">
+                                    <span class="text-deep">{{ item.weight }}kg</span> {{ item.type }}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="flex gap-2">
+                                <select onchange="updateStatus('{{ booking.id }}', this.value)"
+                                    class="flex-grow text-[10px] font-bold border-slate-200 border bg-slate-50 rounded-xl py-2.5 px-3 focus:ring-2 focus:ring-ocean outline-none transition-all">
+                                    <option value="" disabled selected>Update Status</option>
+                                    <option value="Accepted">Accept</option>
+                                    <option value="In Transit">In Transit</option>
+                                    <option value="Near Destination">Near Port</option>
+                                    <option value="Delivered">Delivered</option>
+                                    <option value="Cancelled">Cancel</option>
+                                </select>
+                                <a href="/receipt/{{ booking.id }}" target="_blank"
+                                    class="flex items-center gap-2 px-3 py-2.5 bg-slate-100 rounded-xl text-slate-700 hover:text-ocean transition-all border border-slate-200 text-[10px] font-bold">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
+                                        </path>
+                                    </svg>
+                                    Receipt
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Pricing Management UI -->
+                <h3 class="text-lg font-bold text-deep flex items-center gap-2 pt-6">
+                    <svg class="w-5 h-5 text-ocean" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                        </path>
+                    </svg>
+                    Price Rates (NGN/kg)
+                </h3>
+                <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-6 md:p-8">
+                    <div id="pricingContainer" class="space-y-4">
+                        {% for type, rate in pricing_config.items() %}
+                        <div
+                            class="pricing-row flex flex-col md:flex-row md:items-center gap-3 md:gap-4 bg-slate-50 p-4 md:p-3 rounded-2xl border border-slate-100">
+                            <input type="text" value="{{ type }}"
+                                class="pricing-type flex-grow bg-transparent border-none focus:ring-0 font-bold text-deep text-sm"
+                                placeholder="Cargo Category">
+                            <div class="flex items-center gap-2">
+                                <div
+                                    class="flex-grow md:flex-none flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200">
+                                    <span class="text-slate-400 text-xs font-bold">₦</span>
+                                    <input type="number" value="{{ rate }}"
+                                        class="pricing-rate w-full md:w-20 border-none focus:ring-0 text-sm font-bold text-ocean"
+                                        placeholder="0">
+                                </div>
+                                <button onclick="this.parentElement.parentElement.remove()"
+                                    class="p-2 text-red-300 hover:text-red-500 transition-all bg-white rounded-xl border border-slate-100 md:bg-transparent md:border-none">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                        </path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3 mt-8">
+                        <button onclick="addPricingRow()"
+                            class="flex-grow py-3 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-sm hover:border-ocean hover:text-ocean transition-all">
+                            + Add New Category
+                        </button>
+                        <button onclick="savePricing()"
+                            class="px-8 py-3 bg-ocean text-white rounded-2xl font-bold text-sm shadow-lg shadow-ocean/20 hover:bg-sky-500 transition-all">
+                            Save Rates
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Withdrawal History -->
+            <div class="space-y-6">
+                <!-- ... (keeping existing withdrawal history) -->
+                <h3 class="text-lg font-bold text-deep flex items-center gap-2">
+                    <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                        </path>
+                    </svg>
+                    Withdrawals
+                </h3>
+                <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+                    <div class="p-6 space-y-4">
+                        {% for withdrawal in withdrawals %}
+                        <div
+                            class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-ocean/20 transition-all">
+                            <div>
+                                <div class="text-xs font-bold text-deep">NGN {{ "{:,.2f}".format(withdrawal.amount) }}
+                                </div>
+                                <div class="text-[10px] text-slate-400 italic">Settlement</div>
+                            </div>
+                            <div class="text-right">
+                                <div>
+                                    <div class="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full inline-block
+                                        {% if withdrawal.status == 'Pending' %} bg-amber-100 text-amber-600
+                                        {% elif 'Approved' in withdrawal.status %} bg-green-100 text-green-600
+                                        {% else %} bg-slate-100 text-slate-600 {% endif %}">
+                                        {% if 'Approved' in withdrawal.status %}Approved{% else %}{{ withdrawal.status
+                                        }}{% endif %}
+                                    </div>
+                                    <div class="text-[8px] text-slate-300 mt-1">{{ withdrawal.date.split(' ')[0] }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-10 opacity-30 italic text-sm">No withdrawals yet</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="mt-8 pb-12">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 mt-8">
+                <h3 class="text-lg font-bold text-deep flex items-center gap-2">
+                    <svg class="w-5 h-5 text-ocean" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                        </path>
+                    </svg>
+                    Registered Users
+                </h3>
+                <a href="/admin/export/users"
+                    class="inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-200 transition-all border border-slate-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Download User List
+                </a>
+            </div>
+            <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+                <!-- Desktop Table -->
+                <div class="hidden md:block overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-100">
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                    Full Name</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                    Username</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                    Email</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                    Password</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                    Status & Role</th>
+                                <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                    Last Active</th>
+                                <th
+                                    class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">
+                                    Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-50">
+                            {% for username, data in users.items() %}
+                            <tr class="hover:bg-slate-50 transition-all group">
+                                <td class="px-6 py-4 text-sm font-bold text-deep relative">
+                                    {% if data.get('last_active') %}
+                                    {% set last_active_dt = data.last_active %}
+                                    {% if last_active_dt %}
+                                    <span
+                                        class="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"
+                                        title="Active Now"></span>
+                                    {% endif %}
+                                    {% endif %}
+                                    {{ data.full_name }}
+                                </td>
+                                <td class="px-6 py-4 text-sm text-slate-600 font-mono">{{ data.username }}</td>
+                                <td class="px-6 py-4 text-sm text-ocean font-medium">{{ data.email }}</td>
+                                <td class="px-6 py-4 text-sm text-slate-500 font-mono select-all">{{ data.password }}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        {% if data.get('is_verified', False) %}
+                                        <span
+                                            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700">
+                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd"
+                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                                    clip-rule="evenodd"></path>
+                                            </svg>
+                                            Verified
+                                        </span>
+                                        {% else %}
+                                        <span
+                                            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-500">Unverified</span>
+                                        {% endif %}
+
+                                        {% if data.get('is_admin', False) %}
+                                        <span
+                                            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700">Admin</span>
+                                        {% else %}
+                                        <span
+                                            class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-600">Customer</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    {% if data.get('last_active') %}
+                                    <div class="text-xs text-slate-600 font-medium whitespace-nowrap">
+                                        {{ data.last_active.split(' ')[0] }}
+                                        <span class="text-slate-400 ml-1">{{ data.last_active.split(' ')[1][:5]
+                                            }}</span>
+                                    </div>
+                                    {% else %}
+                                    <div class="text-xs text-slate-400 italic font-mono">-</div>
+                                    {% endif %}
+                                </td>
+
+                                <td class="px-6 py-4 text-right">
+                                    <div class="flex justify-end gap-2">
+                                        {% if not data.get('is_verified', False) %}
+                                        <button onclick="verifyUser('{{ data.username }}')"
+                                            class="px-3 py-1.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg text-xs font-bold transition-colors">
+                                            Verify
+                                        </button>
+                                        {% endif %}
+                                        {% if not data.get('is_admin', False) %}
+                                        <button onclick="makeAdmin('{{ data.username }}')"
+                                            class="px-3 py-1.5 bg-purple-50 text-purple-600 hover:bg-purple-100 rounded-lg text-xs font-bold transition-colors">
+                                            Make Admin
+                                        </button>
+                                        {% endif %}
+                                        <a href="{{ url_for('admin_user_history', username=data.username) }}"
+                                            class="px-3 py-1.5 bg-sky-50 text-sky-700 hover:bg-sky-100 rounded-lg text-xs font-bold transition-colors">
+                                            History
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="px-6 py-8 text-center text-sm text-slate-400 italic">No users
+                                    registered yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile Cards -->
+                <div class="md:hidden divide-y divide-slate-100">
+                    {% for username, data in users.items() %}
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <div class="text-sm font-bold text-deep flex items-center gap-2">
+                                    {{ data.full_name }}
+                                    {% if data.get('last_active') %}
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    {% endif %}
+                                </div>
+                                <div class="text-xs text-slate-500 font-mono">@{{ data.username }}</div>
+                            </div>
+                            <div class="flex flex-col items-end gap-1">
+                                {% if data.get('is_admin', False) %}
+                                <span
+                                    class="text-[8px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 uppercase">Admin</span>
+                                {% else %}
+                                <span
+                                    class="text-[8px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 uppercase">Customer</span>
+                                {% endif %}
+                                {% if data.get('is_verified', False) %}
+                                <span
+                                    class="text-[8px] font-bold px-1.5 py-0.5 rounded bg-green-100 text-green-700 uppercase">Verified</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="space-y-2 mb-6 text-xs">
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">Email:</span>
+                                <span class="text-ocean font-medium">{{ data.email }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">Password:</span>
+                                <span class="text-slate-500 font-mono">{{ data.password }}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">Last Active:</span>
+                                <span class="text-slate-600">{{ data.last_active if data.get('last_active') else '-'
+                                    }}</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2">
+                            {% if not data.get('is_verified', False) %}
+                            <button onclick="verifyUser('{{ data.username }}')"
+                                class="py-2 bg-green-50 text-green-600 rounded-xl text-[10px] font-bold">
+                                Verify
+                            </button>
+                            {% endif %}
+                            {% if not data.get('is_admin', False) %}
+                            <button onclick="makeAdmin('{{ data.username }}')"
+                                class="py-2 bg-purple-50 text-purple-600 rounded-xl text-[10px] font-bold">
+                                +Admin
+                            </button>
+                            {% endif %}
+                            <a href="{{ url_for('admin_user_history', username=data.username) }}"
+                                class="py-2 bg-sky-50 text-sky-700 rounded-xl text-[10px] font-bold text-center">
+                                History
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Withdrawal Modal -->
+<div id="withdrawModal"
+    class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+    <div
+        class="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl transform transition-all duration-300 scale-95 translate-y-4">
+        <h2 class="text-2xl font-bold text-deep mb-2">Withdraw Funds</h2>
+        <p class="text-slate-500 text-sm mb-6">Transfer your earnings to your bank account.</p>
+
+        <form id="withdrawForm" class="space-y-6">
+            <div class="bg-ocean/5 p-4 rounded-2xl border border-ocean/10">
+                <div class="text-[10px] font-bold text-ocean uppercase mb-2">Settlement Account</div>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm">
+                        <svg class="w-4 h-4 text-ocean" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z">
+                            </path>
+                        </svg>
+                    </div>
+                    <div class="text-sm font-bold text-deep">Linked Bank Account</div>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-widest">Select
+                        Bank</label>
+                    <select id="withdrawBank" required
+                        class="w-full rounded-2xl border-slate-200 border bg-slate-50 px-4 py-3 focus:ring-4 focus:ring-ocean/10 outline-none transition-all text-sm font-bold text-deep">
+                        <option value="">Choose your bank...</option>
+                        <option value="044">Access Bank</option>
+                        <option value="057">Zenith Bank</option>
+                        <option value="058">Guaranty Trust Bank</option>
+                        <option value="011">First Bank</option>
+                        <option value="033">United Bank for Africa (UBA)</option>
+                        <option value="305">OPay</option>
+                        <option value="100033">PalmPay</option>
+                        <option value="050">Ecobank</option>
+                        <option value="070">Fidelity Bank</option>
+                        <option value="030">Heritage Bank</option>
+                        <option value="082">Keystone Bank</option>
+                        <option value="232">Sterling Bank</option>
+                        <option value="032">Union Bank</option>
+                        <option value="215">Unity Bank</option>
+                        <option value="035">Wema Bank</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-widest">Account
+                        Number</label>
+                    <input type="text" id="withdrawAccount" maxlength="10" required
+                        class="w-full rounded-2xl border-slate-200 border bg-slate-50 px-4 py-3 focus:ring-4 focus:ring-ocean/10 outline-none transition-all text-sm font-bold text-deep"
+                        placeholder="10 digit account number">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-widest">Amount to
+                        Withdraw (NGN)</label>
+                    <input type="number" id="withdrawAmount" max="{{ available_balance }}" required
+                        class="w-full rounded-2xl border-slate-200 border bg-slate-50 px-5 py-4 focus:ring-4 focus:ring-ocean/10 outline-none transition-all text-lg font-black text-deep"
+                        placeholder="0.00">
+                    <div class="text-[10px] text-slate-400 mt-2 font-bold px-1">Available: NGN {{
+                        "{:,.2f}".format(available_balance) }}</div>
+                </div>
+            </div>
+
+            <div class="pt-2 flex flex-col gap-3">
+                <button type="submit"
+                    class="w-full py-4 bg-deep text-white rounded-2xl font-bold text-base hover:bg-slate-800 transition-all shadow-xl shadow-deep/20">
+                    Confirm Withdrawal
+                </button>
+                <button type="button" onclick="closeWithdrawModal()"
+                    class="w-full py-3 text-slate-400 font-bold text-sm hover:text-slate-600 transition-all">Cancel
+                    Request</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function updateStatus(bookingId, newStatus) {
+        fetch('/admin/update_status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ booking_id: bookingId, status: newStatus })
+        }).then(res => res.json()).then(data => {
+            if (data.status === 'success') {
+                alert("Status updated!");
+                location.reload();
+            }
+            else alert("Error: " + data.message);
+        });
+    }
+
+    function verifyUser(username) {
+        if (!confirm(`Are you sure you want to verify ${username}?`)) return;
+        fetch('/admin/verify_user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: username })
+        }).then(res => res.json()).then(data => {
+            if (data.status === 'success') {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert("Error: " + data.message);
+            }
+        });
+    }
+
+    function makeAdmin(username) {
+        if (!confirm(`Are you sure you want to make ${username} an Administrator?`)) return;
+        fetch('/admin/make_admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: username })
+        }).then(res => res.json()).then(data => {
+            if (data.status === 'success') {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert("Error: " + data.message);
+            }
+        });
+    }
+
+    function addPricingRow() {
+        const container = document.getElementById('pricingContainer');
+        const row = document.createElement('div');
+        row.className = 'pricing-row flex flex-col md:flex-row md:items-center gap-3 md:gap-4 bg-slate-50 p-4 md:p-3 rounded-2xl border border-slate-100 animate-in fade-in slide-in-from-top-2';
+        row.innerHTML = `
+            <input type="text" class="pricing-type flex-grow bg-transparent border-none focus:ring-0 font-bold text-deep text-sm" placeholder="Cargo Category">
+            <div class="flex items-center gap-2">
+                <div class="flex-grow md:flex-none flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200">
+                    <span class="text-slate-400 text-xs font-bold">₦</span>
+                    <input type="number" class="pricing-rate w-full md:w-20 border-none focus:ring-0 text-sm font-bold text-ocean" placeholder="0">
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" class="p-2 text-red-300 hover:text-red-500 transition-all bg-white rounded-xl border border-slate-100 md:bg-transparent md:border-none">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+            </div>
+        `;
+        container.appendChild(row);
+    }
+
+    function savePricing() {
+        const pricing = {};
+        document.querySelectorAll('.pricing-row').forEach(row => {
+            const type = row.querySelector('.pricing-type').value.trim();
+            const rate = parseFloat(row.querySelector('.pricing-rate').value) || 0;
+            if (type) pricing[type] = rate;
+        });
+
+        fetch('/admin/update_pricing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(pricing)
+        }).then(res => res.json()).then(data => {
+            if (data.status === 'success') alert("Rates updated successfully!");
+            else alert("Error saving rates.");
+        });
+    }
+
+    function openWithdrawModal() {
+        const modal = document.getElementById('withdrawModal');
+        modal.classList.remove('hidden');
+        setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    }
+
+    function closeWithdrawModal() {
+        const modal = document.getElementById('withdrawModal');
+        modal.classList.add('opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
+
+    document.getElementById('withdrawForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const amount = document.getElementById('withdrawAmount').value;
+        const bankCode = document.getElementById('withdrawBank').value;
+        const accountNumber = document.getElementById('withdrawAccount').value;
+
+        fetch('/admin/withdraw', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                amount: amount,
+                bank_code: bankCode,
+                account_number: accountNumber
+            })
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert(data.message || 'Withdrawal failed.');
+                }
+            });
+    });
+</script>
+{% endblock %}

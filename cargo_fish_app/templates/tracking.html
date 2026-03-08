@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Track Your Shipment - CargoFish{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-50 py-12">
+    <div class="max-w-4xl mx-auto px-4">
+        <div class="text-center mb-10">
+            <h1 class="text-3xl font-bold text-deep mb-4">Track Your Cargo</h1>
+            <p class="text-slate-500">Enter your tracking ID to see shipment progress and estimated delivery.</p>
+        </div>
+
+        <div class="bg-white p-8 rounded-2xl shadow-xl border border-slate-100 mb-10">
+            <form action="/track" method="POST" class="flex flex-col sm:flex-row gap-4">
+                <input type="text" name="tracking_id" required
+                    class="flex-1 rounded-xl border-slate-200 border bg-slate-50 px-6 py-4 focus:ring-2 focus:ring-ocean focus:border-transparent outline-none transition-all text-lg"
+                    placeholder="Enter Tracking ID (e.g., CF-12345678)"
+                    value="{{ tracking_id if tracking_id else '' }}">
+                <button type="submit"
+                    class="bg-ocean text-white px-8 py-4 rounded-xl font-bold hover:bg-sky-500 transition-all shadow-lg hover:shadow-cyan-500/30">
+                    Track
+                </button>
+
+            </form>
+        </div>
+
+        {% if error %}
+        <div class="bg-red-50 text-red-600 p-4 rounded-xl border border-red-100 text-center mb-8">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        {% if booking and tracking %}
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100 animate-fade-in-up">
+            <div
+                class="bg-deep p-6 border-b border-slate-800 flex flex-col sm:flex-row gap-4 justify-between sm:items-center text-white">
+                <div>
+                    <div class="text-slate-400 text-sm uppercase tracking-wider mb-1">Tracking ID</div>
+                    <div class="font-mono text-xl font-bold text-ocean break-all">{{ booking.id }}</div>
+                </div>
+                <div class="text-left sm:text-right">
+                    <div class="text-slate-400 text-sm uppercase tracking-wider mb-1">Status</div>
+                    <div
+                        class="inline-block px-3 py-1 rounded-full text-sm font-bold {{ tracking.status_badge_class }}">
+                        {{ booking.status }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-8 space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-slate-50 rounded-2xl border border-slate-100 p-5">
+                        <div class="text-[11px] uppercase font-bold text-slate-400 tracking-widest mb-1">Estimated
+                            Delivery</div>
+                        <div class="text-2xl font-bold text-deep">{{ tracking.eta_label }}</div>
+                        <div class="text-sm text-slate-500 mt-1">{{ tracking.eta_subtext }}</div>
+                    </div>
+                    <div class="bg-slate-50 rounded-2xl border border-slate-100 p-5">
+                        <div class="text-[11px] uppercase font-bold text-slate-400 tracking-widest mb-2">Progress</div>
+                        <div class="w-full h-3 rounded-full bg-slate-200 overflow-hidden">
+                            <div id="tracking-progress-bar" class="h-full bg-ocean transition-all duration-700"
+                                style="width: 0%;"></div>
+                        </div>
+                        <span id="tracking-progress-value" class="hidden">{{ tracking.progress_percent|default(0)|int
+                            }}</span>
+                        <div class="text-sm text-slate-600 mt-2 font-semibold">{{
+                            tracking.progress_percent|default(0)|int }}% complete</div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-100 rounded-2xl p-6">
+                    <h3 class="text-lg font-bold text-deep mb-5">Shipment Timeline</h3>
+                    <div class="space-y-4">
+                        {% for step in tracking.timeline %}
+                        <div class="flex items-start gap-4">
+                            <div class="mt-1 w-4 h-4 rounded-full
+                                {% if tracking.is_cancelled %}bg-slate-300
+                                {% elif step.completed %}bg-green-500
+                                {% elif step.active %}bg-ocean animate-pulse
+                                {% else %}bg-slate-300{% endif %}"></div>
+                            <div>
+                                <div class="font-semibold
+                                    {% if tracking.is_cancelled %}text-slate-500
+                                    {% elif step.completed %}text-green-600
+                                    {% elif step.active %}text-ocean
+                                    {% else %}text-slate-500{% endif %}">
+                                    {{ step.title }}
+                                </div>
+                                <div class="text-xs text-slate-400">{{ step.key }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-2">
+                    <div>
+                        <div class="text-slate-400 text-sm mb-3">Route</div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2">
+                            <div class="text-sm"><span class="font-bold text-deep">Origin:</span> {{ booking.origin }}
+                            </div>
+                            <div class="text-sm"><span class="font-bold text-deep">Destination:</span> {{
+                                booking.destination }}</div>
+                            <div class="text-sm"><span class="font-bold text-deep">Booked:</span> {{ booking.date }}
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="text-slate-400 text-sm mb-3">Shipment & Payment</div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2">
+                            <div class="text-sm"><span class="font-bold text-deep">Total Paid:</span> NGN {{
+                                "{:,.2f}".format(booking.total_price) }}</div>
+                            <div class="text-sm"><span class="font-bold text-deep">Payment Method:</span> {{
+                                booking.payment_method }}</div>
+                            <a href="/receipt/{{ booking.id }}"
+                                class="inline-block text-ocean hover:text-sky-600 text-xs font-bold underline decoration-ocean/30 underline-offset-4">View
+                                Receipt</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="text-slate-400 text-sm mb-3">Shipment Items</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {% if booking['items'] %}
+                        {% for item in booking['items'] %}
+                        <div
+                            class="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center">
+                            <span class="font-medium text-deep text-sm">{{ item.type }}</span>
+                            <span class="text-xs font-bold text-ocean bg-ocean/10 px-2 py-1 rounded">{{ item.weight }}
+                                kg</span>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="font-medium text-deep">{{ booking.cargo_type }} ({{ booking.weight }} kg)</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+<script id="tracking-progress-script">
+    (function () {
+        var valueEl = document.getElementById('tracking-progress-value');
+        var bar = document.getElementById('tracking-progress-bar');
+        if (!valueEl || !bar) return;
+        var raw = valueEl.textContent || '0';
+        var val = parseInt(raw, 10);
+        if (isNaN(val)) val = 0;
+        if (val < 0) val = 0;
+        if (val > 100) val = 100;
+        bar.style.width = val + '%';
+    })();
+</script>
+{% endblock %}

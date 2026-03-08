@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="relative bg-deep-ocean text-white py-24 md:py-32 overflow-hidden">
+    <!-- Abstract Background Pattern -->
+    <div class="absolute inset-0 opacity-30">
+        <div
+            class="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(14,165,233,0.1),transparent_50%)]">
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 relative z-10 flex flex-col items-center text-center">
+        <span
+            class="inline-block py-1 px-3 rounded-full bg-slate-800/50 border border-slate-700 text-ocean text-sm font-semibold mb-6 fade-in-up">
+            Global Logistics Partner
+        </span>
+        <h1 class="text-5xl md:text-7xl font-bold mb-6 tracking-tight fade-in-up leading-tight">
+            Freshness Across <br />
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-ocean to-cyan-300">The Seven Seas</span>
+        </h1>
+        <p class="text-xl md:text-2xl text-slate-300 mb-10 max-w-2xl fade-in-up mx-auto" style="animation-delay: 0.2s;">
+            Premium logistics for perishable cargo. We ensure your catch arrives as fresh as the moment it left the
+            water.
+        </p>
+        <div class="flex gap-4 flex-col sm:flex-row fade-in-up" style="animation-delay: 0.4s;">
+            <a href="/booking"
+                class="bg-ocean text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-sky-500 transition-all shadow-lg hover:shadow-cyan-500/50 flex items-center justify-center gap-2">
+                Book Shipment
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3">
+                    </path>
+                </svg>
+            </a>
+            <a href="#services"
+                class="px-8 py-4 rounded-full text-lg font-semibold border border-slate-600 hover:bg-slate-800/50 transition-all text-slate-300">
+                Learn More
+            </a>
+        </div>
+    </div>
+
+    <!-- Floating Elements Animation -->
+    <div class="absolute top-20 left-10 w-24 h-24 bg-white opacity-5 rounded-full blur-2xl animate-float"></div>
+    <div class="absolute bottom-20 right-10 w-64 h-64 bg-ocean opacity-10 rounded-full blur-3xl animate-float"
+        style="animation-delay: 2s;"></div>
+</section>
+
+<!-- Values / Trust Band -->
+<section class="border-b border-slate-200 bg-white">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <div
+            class="flex flex-wrap justify-between items-center gap-8 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+            <!-- Simulated Logos -->
+            <div class="text-xl font-bold text-slate-400">MAERSK <span class="text-xs font-normal">Partner</span></div>
+            <div class="text-xl font-bold text-slate-400">MSC <span class="text-xs font-normal">Logistics</span></div>
+            <div class="text-xl font-bold text-slate-400">CMA CGM</div>
+            <div class="text-xl font-bold text-slate-400">Hapag-Lloyd</div>
+            <div class="text-xl font-bold text-slate-400">ONE</div>
+        </div>
+    </div>
+</section>
+
+<!-- Services Section -->
+<section id="services" class="py-24 bg-slate-50 relative">
+    <div class="max-w-7xl mx-auto px-4">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl md:text-4xl font-bold text-deep mb-4">Specialized Cargo Solutions</h2>
+            <p class="text-slate-600 max-w-xl mx-auto text-lg">We understand the specific needs of the seafood industry.
+                Every container is monitored 24/7.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Service 1 -->
+            <div
+                class="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 group hover:-translate-y-1">
+                <div
+                    class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-blue-100 transition-colors">
+                    <svg class="w-8 h-8 text-ocean" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-deep mb-3">Express Air Freight</h3>
+                <p class="text-slate-500 leading-relaxed">Fastest delivery for high-value perishable goods like
+                    sashimi-grade tuna. Temperature controlled from pickup to delivery.</p>
+            </div>
+
+            <!-- Service 2 -->
+            <div
+                class="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 group hover:-translate-y-1">
+                <div
+                    class="w-14 h-14 bg-cyan-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-cyan-100 transition-colors">
+                    <svg class="w-8 h-8 text-ocean" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-deep mb-3">Deep Freeze Storage</h3>
+                <p class="text-slate-500 leading-relaxed">Advanced cryogenic freezers for long-haul ocean transport.
+                    Maintaining -20°C consistently for frozen bulk cargo.</p>
+            </div>
+
+            <!-- Service 3 -->
+            <a href="/track"
+                class="bg-white p-8 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 group hover:-translate-y-1 block">
+                <div
+                    class="w-14 h-14 bg-indigo-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-indigo-100 transition-colors">
+                    <svg class="w-8 h-8 text-ocean" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                        </path>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-deep mb-3">Global Tracking</h3>
+                <p class="text-slate-500 leading-relaxed">Real-time GPS and temperature monitoring. Know exactly where
+                    your cargo is and its condition at all times.</p>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="bg-deep text-white py-20 border-t border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+        <div class="p-4">
+            <div class="text-4xl md:text-5xl font-bold text-ocean mb-2">120+</div>
+            <div class="text-slate-400 font-medium">Countries Served</div>
+        </div>
+        <div class="p-4">
+            <div class="text-4xl md:text-5xl font-bold text-ocean mb-2">50k</div>
+            <div class="text-slate-400 font-medium">Tons Delivered</div>
+        </div>
+        <div class="p-4">
+            <div class="text-4xl md:text-5xl font-bold text-ocean mb-2">99%</div>
+            <div class="text-slate-400 font-medium">On-Time Rate</div>
+        </div>
+        <div class="p-4">
+            <div class="text-4xl md:text-5xl font-bold text-ocean mb-2">24/7</div>
+            <div class="text-slate-400 font-medium">Customer Support</div>
+        </div>
+    </div>
+</section>
+
+<!-- History Search Section -->
+<section class="py-20 bg-slate-50 relative overflow-hidden">
+    <div class="max-w-4xl mx-auto px-4 text-center relative z-10">
+        <div
+            class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-ocean/10 text-ocean text-xs font-bold mb-4 uppercase tracking-widest">
+            Customer Portal
+        </div>
+        <h2 class="text-3xl font-bold text-deep mb-4">View Your Booking History</h2>
+        <p class="text-slate-600 mb-10 max-w-lg mx-auto">Enter your email address to find all your past and current
+            shipments with CargoFish.</p>
+
+        {% if session.get('user') %}
+        <form action="/history" method="POST" class="max-w-md mx-auto relative group">
+            <input type="hidden" name="email" value="{{ session['user']['email'] }}">
+            <button type="submit"
+                class="w-full bg-deep text-white px-8 py-5 rounded-3xl font-bold hover:bg-slate-800 transition-all shadow-xl hover:shadow-deep/20 flex items-center justify-center gap-3">
+                <svg class="w-6 h-6 text-ocean" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                    </path>
+                </svg>
+                View My Shipment History
+            </button>
+        </form>
+        {% else %}
+        <form action="/history" method="POST" class="max-w-md mx-auto relative group">
+            <div class="flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-grow">
+                    <span class="absolute left-4 top-3.5 text-slate-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                    </span>
+                    <input type="email" name="email" required placeholder="your@email.com"
+                        class="w-full pl-11 pr-4 py-3.5 rounded-2xl border-slate-200 border bg-white focus:ring-4 focus:ring-ocean/10 focus:border-ocean outline-none transition-all shadow-sm group-hover:shadow-md">
+                </div>
+                <button type="submit"
+                    class="bg-deep text-white px-8 py-3.5 rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-lg hover:shadow-deep/20 flex items-center justify-center gap-2 whitespace-nowrap">
+                    Search History
+                </button>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- Decorative Elements -->
+    <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-ocean/5 rounded-full blur-3xl"></div>
+    <div class="absolute -top-24 -right-24 w-64 h-64 bg-cyan-400/5 rounded-full blur-3xl"></div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-20 bg-white">
+    <div class="max-w-4xl mx-auto px-4 text-center">
+        <h2 class="text-3xl font-bold text-deep mb-6">Ready to ship?</h2>
+        <p class="text-slate-600 mb-8 text-lg">Get a quote instantly and book your shipment online with our secure
+            payment system.</p>
+        <a href="/booking"
+            class="inline-block bg-deep text-white px-8 py-4 rounded-full font-bold hover:bg-slate-800 transition-colors">
+            Start Booking Now
+        </a>
+    </div>
+</section>
+{% endblock %}

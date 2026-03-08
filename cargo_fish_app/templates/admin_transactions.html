@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}Transaction History - CargoFish{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-50 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-deep">Transaction History</h1>
+                <p class="text-slate-500 mt-1">All incoming bookings and outgoing withdrawals.</p>
+            </div>
+            <a href="{{ url_for('admin_dashboard') }}"
+                class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-all flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to Dashboard
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <svg class="w-16 h-16 text-emerald-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M11 20V9.828l-3.586 3.586L6 12l6-6 6 6-1.414 1.414L13 9.828V20h-2z" />
+                    </svg>
+                </div>
+                <div class="text-[10px] uppercase font-bold text-emerald-400 mb-1 tracking-widest">Total Incoming
+                    Transfer</div>
+                <div class="text-3xl font-bold text-emerald-500 mb-2 mt-4">NGN {{ "{:,.2f}".format(total_incoming) }}
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <svg class="w-16 h-16 text-amber-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M11 4v10.172l-3.586-3.586L6 12l6 6 6-6-1.414-1.414L13 14.172V4h-2z" />
+                    </svg>
+                </div>
+                <div class="text-[10px] uppercase font-bold text-amber-400 mb-1 tracking-widest">Total Outgoing Transfer
+                </div>
+                <div class="text-3xl font-bold text-amber-500 mb-2 mt-4">NGN {{ "{:,.2f}".format(total_outgoing) }}
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mt-8">
+            <div class="px-6 py-5 border-b border-slate-100 flex justify-between items-center">
+                <h2 class="text-lg font-bold text-deep">All Transactions</h2>
+            </div>
+            <!-- Desktop Table -->
+            <div class="hidden md:block overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-100">
+                            <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID</th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Type
+                            </th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Amount
+                            </th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                Customer / Desc</th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date
+                            </th>
+                            <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50">
+                        {% for t in transactions %}
+                        <tr class="hover:bg-slate-50 transition-all">
+                            <td class="px-6 py-4">
+                                <div class="font-mono text-xs font-bold text-deep">{{ t.id }}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div
+                                    class="text-[10px] font-bold px-2 py-0.5 rounded-full inline-block {% if t.type == 'Incoming' %}bg-emerald-100 text-emerald-700{% else %}bg-amber-100 text-amber-700{% endif %} uppercase">
+                                    {{ t.type }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm">
+                                <div
+                                    class="font-bold {% if t.type == 'Incoming' %}text-emerald-600{% else %}text-amber-500{% endif %}">
+                                    {% if t.type == 'Incoming' %}+{% else %}-{% endif %} NGN {{
+                                    "{:,.2f}".format(t.amount) }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm">
+                                <div class="font-bold text-slate-700">{{ t.customer }}</div>
+                                <div class="text-[10px] text-slate-400 mt-1 max-w-xs truncate"
+                                    title="{{ t.description }}">{{ t.description }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-slate-600 font-mono">{{ t.date }}</td>
+                            <td class="px-6 py-4">
+                                <div class="text-[10px] font-bold uppercase text-slate-500">
+                                    {{ t.status }}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile Card View -->
+            <div class="md:hidden divide-y divide-slate-100">
+                {% for t in transactions %}
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <div class="font-mono text-xs font-bold text-deep">{{ t.id }}</div>
+                            <div
+                                class="text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mt-2 {% if t.type == 'Incoming' %}bg-emerald-100 text-emerald-700{% else %}bg-amber-100 text-amber-700{% endif %} uppercase">
+                                {{ t.type }}
+                            </div>
+                        </div>
+                        <div class="text-[10px] font-bold text-slate-500 uppercase">
+                            {{ t.status }}
+                        </div>
+                    </div>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Amount:</span>
+                            <span
+                                class="font-bold {% if t.type == 'Incoming' %}text-emerald-600{% else %}text-amber-500{% endif %}">
+                                {% if t.type == 'Incoming' %}+{% else %}-{% endif %} NGN {{ "{:,.2f}".format(t.amount)
+                                }}
+                            </span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Customer:</span>
+                            <span class="text-deep font-semibold text-right">{{ t.customer }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Desc:</span>
+                            <span class="text-slate-500 text-right truncate max-w-[150px]"
+                                title="{{ t.description }}">{{ t.description }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-400">Date:</span>
+                            <span class="text-slate-600 font-mono text-xs">{{ t.date }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if not transactions %}
+            <div class="p-12 text-center text-slate-400 italic text-sm">
+                No transactions found.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

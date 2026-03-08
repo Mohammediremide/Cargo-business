@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - CargoFish{% endblock %}
+
+
+{% block content %}
+<div class="min-h-screen bg-slate-50 py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Profile Sidebar -->
+            <div class="space-y-6">
+                <div class="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 text-center">
+                    <div
+                        class="w-24 h-24 bg-ocean/10 text-ocean rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                                clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-deep uppercase">{{ user.full_name }}</h2>
+                    <p class="text-slate-500 text-sm mb-6">@{{ user.username }}</p>
+
+                    <div class="border-t border-slate-50 pt-6 text-left space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Email
+                                Address</label>
+                            <div class="text-sm font-semibold text-deep">{{ user.email }}</div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Account
+                                Status</label>
+                            <div class="flex items-center gap-2 mt-1">
+                                {% if user.get('is_admin', False) %}
+                                <span class="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
+                                <span class="text-xs font-bold text-purple-600">Administrator</span>
+                                {% elif user.get('is_verified', False) %}
+                                <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                <span class="text-xs font-bold text-green-600">Active Verified</span>
+                                {% else %}
+                                <span class="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></span>
+                                <span class="text-xs font-bold text-amber-600">Pending Verification</span>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Country</label>
+                                <div class="text-sm font-semibold text-deep">{{ user.country_name or 'Not set' }}</div>
+                            </div>
+                            <form action="/profile/update_country" method="POST" class="pt-2">
+                                <label
+                                    class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Update
+                                    Country</label>
+                                <select id="profileCountry" name="country_code" required
+                                    class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:ring-2 focus:ring-ocean/20 outline-none">
+                                    <option value="">Select country</option>
+                                </select>
+                                <input type="hidden" id="profileCountryName" name="country_name">
+                                <button type="submit"
+                                    class="mt-3 w-full bg-ocean text-white py-2 rounded-lg text-xs font-bold hover:bg-sky-500 transition-colors">Save
+                                    Country</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-deep rounded-3xl p-8 text-white shadow-xl shadow-deep/20 relative overflow-hidden">
+                    <svg class="absolute -right-4 -bottom-4 w-32 h-32 opacity-10" fill="currentColor"
+                        viewBox="0 0 24 24">
+                        <path d="M21 18H3V6h18v12zM12 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" />
+                    </svg>
+                    <h3 class="text-lg font-bold mb-2">Need Help?</h3>
+                    <p class="text-slate-400 text-sm mb-6">Our support team is available 24/7 for any logistics
+                        inquiries.</p>
+                    <a href="mailto:support@cargofish.com"
+                        class="inline-block px-6 py-2 bg-ocean hover:bg-sky-500 rounded-xl text-xs font-bold transition-all">Contact
+                        Support</a>
+                </div>
+            </div>
+
+            <!-- Shipment History -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-deep flex items-center gap-2">
+                        <svg class="w-6 h-6 text-ocean" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                            </path>
+                        </svg>
+                        Your Shipment History
+                    </h3>
+                    <a href="/booking" class="text-sm font-bold text-ocean hover:underline">+ New Booking</a>
+                </div>
+
+                <div class="space-y-4">
+                    {% for booking in bookings %}
+                    <div
+                        class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-all group">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div class="flex items-center gap-4">
+                                <div
+                                    class="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-ocean/10 group-hover:text-ocean transition-all">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-bold text-slate-400">#{{ booking.id }}</div>
+                                    <div class="font-bold text-deep">{{ booking.origin }} → {{ booking.destination }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-4">
+                                <div class="text-right">
+                                    <div class="text-[10px] uppercase font-bold px-3 py-1 rounded-full inline-block
+                                        {% if booking.status == 'Processing' %} bg-blue-50 text-blue-600
+                                        {% elif booking.status == 'Delivered' %} bg-green-50 text-green-600
+                                        {% elif booking.status == 'Cancelled' %} bg-red-50 text-red-600
+                                        {% else %} bg-slate-50 text-slate-600 {% endif %}">
+                                        {{ booking.status }}
+                                    </div>
+                                    <div class="text-[10px] text-slate-300 mt-1 uppercase font-bold tracking-tighter">{{
+                                        booking.date }}</div>
+                                </div>
+                                <div class="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
+                                    <a href="/track?tracking_id={{ booking.id }}"
+                                        class="flex-grow md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 rounded-xl text-slate-700 hover:text-ocean transition-all border border-slate-100 text-xs font-bold"
+                                        title="Track Shipment">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                            </path>
+                                        </svg>
+                                        Track
+                                    </a>
+                                    <a href="/receipt/{{ booking.id }}" target="_blank"
+                                        class="flex-grow md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-sky-50 rounded-xl text-ocean hover:text-white hover:bg-ocean transition-all border border-sky-100 text-xs font-bold"
+                                        title="View/Download Receipt">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z">
+                                            </path>
+                                        </svg>
+                                        Receipt
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="bg-white rounded-3xl p-20 text-center border-2 border-dashed border-slate-100">
+                        <div
+                            class="w-16 h-16 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0l-8 4-8-4">
+                                </path>
+                            </svg>
+                        </div>
+                        <h4 class="text-slate-400 font-bold">No Shipments Found</h4>
+                        <p class="text-slate-300 text-sm">Your booked shipments will appear here.</p>
+                        <a href="/booking"
+                            class="inline-block mt-6 px-8 py-3 bg-ocean text-white rounded-2xl font-bold shadow-lg shadow-ocean/20">Book
+                            Your First Cargo</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+    (function () {
+        var countrySelect = document.getElementById('profileCountry');
+        var countryNameInput = document.getElementById('profileCountryName');
+        if (!countrySelect) return;
+
+        var currentCode = "{{ user.country_code or '' }}";
+
+        function setCountryName() {
+            var selected = countrySelect.options[countrySelect.selectedIndex];
+            countryNameInput.value = selected && selected.value ? selected.text : '';
+        }
+
+        function showCountryError(message) {
+            countrySelect.innerHTML = '';
+            var opt = document.createElement('option');
+            opt.value = '';
+            opt.textContent = message || 'Unable to load countries';
+            countrySelect.appendChild(opt);
+        }
+
+        fetch('/api/geo/countries')
+            .then(function (res) {
+                return res.json().then(function (data) {
+                    return { ok: res.ok, data: data };
+                });
+            })
+            .then(function (result) {
+                var data = result.data;
+                if (!result.ok) {
+                    showCountryError((data && data.error) || 'Unable to load countries');
+                    return;
+                }
+                if (!Array.isArray(data) || data.length === 0) {
+                    showCountryError('No countries found');
+                    return;
+                }
+                data.forEach(function (c) {
+                    var opt = document.createElement('option');
+                    opt.value = c.code || '';
+                    opt.textContent = c.name || '';
+                    if (currentCode && opt.value === currentCode) {
+                        opt.selected = true;
+                        countryNameInput.value = opt.textContent;
+                    }
+                    countrySelect.appendChild(opt);
+                });
+            })
+            .catch(function () {
+                showCountryError('Unable to load countries');
+            });
+
+        countrySelect.addEventListener('change', setCountryName);
+    })();
+</script>
+{% endblock %}

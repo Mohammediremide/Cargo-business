@@ -1,0 +1,14 @@
+{
+    "Sewa": {
+        "full_name": "Adebanjo adesewa",
+        "username": "Sewa",
+        "email": "odewunmiire@gmail.com",
+        "password": "MohMik2104@",
+        "is_verified": true,
+        "is_admin": false,
+        "country_code": "NG",
+        "country_name": "Nigeria",
+        "joined_at": "2026-02-28 01:19:18",
+        "last_active": "2026-03-05 22:47:43"
+    }
+}

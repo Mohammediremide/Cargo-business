@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0ea5e9">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/logo.png') }}">
+    <title>{% block title %}CargoFish - Premium Logistics{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        deep: '#0f172a',
+                        ocean: '#0ea5e9',
+                        surface: '#f8fafc',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="flex flex-col min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 glass-dark text-white shadow-lg transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex-shrink-0 flex items-center">
+                    <a href="/" class="flex items-center gap-3" aria-label="CargoFish home">
+                        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="CargoFish Logo"
+                            class="h-10 w-auto rounded-md object-contain" loading="lazy">
+                        <span class="text-2xl font-bold tracking-tighter"><span
+                                class="text-ocean">Cargo</span>Fish</span>
+                    </a>
+                </div>
+                <div class="hidden md:flex space-x-8 items-center text-sm font-medium">
+                    <a href="/" class="hover:text-ocean transition-colors">Home</a>
+                    <a href="/track" class="hover:text-ocean transition-colors">Track</a>
+                    {% if session.get('admin_logged_in') %}
+                    <a href="/admin/dashboard"
+                        class="text-ocean font-bold hover:text-white transition-colors">Dashboard</a>
+                    {% endif %}
+                    {% if session.get('user') %}
+                    <a href="/profile" class="text-slate-400 hover:text-ocean transition-colors">
+                        Hello, <span class="text-ocean uppercase font-bold">{{ session['user']['username'] }}</span>
+                    </a>
+                    <a href="/logout" class="text-red-400 hover:text-red-300 transition-colors">Logout</a>
+                    {% endif %}
+                    <a href="/booking"
+                        class="bg-ocean hover:bg-sky-500 text-white px-5 py-2 rounded-full font-medium transition-all shadow-lg hover:shadow-cyan-500/50">
+                        Book Cargo
+                    </a>
+
+
+
+                    {% if session.get('admin_logged_in') or session.get('user') %}
+                    <!-- Desktop Notification Bell -->
+                    <div class="relative" id="notificationMenuDesktop">
+                        <button onclick="toggleNotificationPanel()"
+                            class="relative p-2 text-slate-400 hover:text-ocean transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                                </path>
+                            </svg>
+                            <span id="notifBadge"
+                                class="hidden absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-slate-900"></span>
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Mobile Buttons (Visible only on mobile) -->
+                <div class="md:hidden flex items-center gap-2">
+                    {% if session.get('admin_logged_in') or session.get('user') %}
+                    <button onclick="toggleNotificationPanel()" class="relative p-2 text-slate-400 hover:text-ocean"
+                        id="notificationMenuMobile">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9">
+                            </path>
+                        </svg>
+                        <span id="notifBadgeMobile"
+                            class="hidden absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-slate-900"></span>
+                    </button>
+                    {% endif %}
+                    <button id="mobileMenuBtn" class="p-2 text-slate-400 hover:text-ocean">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path id="hamburgerIcon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h16"></path>
+                            <path id="closeIcon" class="hidden" stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Global Notification Panel (Placed outside specific containers) -->
+        <div id="notifPanel"
+            class="hidden absolute right-4 md:right-8 top-20 w-[calc(100vw-2rem)] md:w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden transform transition-all duration-200 origin-top-right scale-95 opacity-0 z-[100]">
+            <div class="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50">
+                <h3 class="text-sm font-bold text-deep">Notifications</h3>
+                <button onclick="markAllRead()" class="text-xs text-ocean hover:underline">Mark all read</button>
+            </div>
+            <div id="notifList" class="max-h-96 overflow-y-auto">
+                <div class="p-8 text-center text-slate-400 italic text-xs">No notifications yet</div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Overlay -->
+        <div id="mobileMenu"
+            class="hidden md:hidden glass-dark border-t border-slate-800 absolute w-full transition-all duration-300 shadow-2xl">
+            <div class="px-4 pt-2 pb-6 space-y-2 text-center text-lg">
+                <a href="/" class="block py-3 hover:text-ocean transition-colors border-b border-slate-800/50">Home</a>
+                <a href="/track"
+                    class="block py-3 hover:text-ocean transition-colors border-b border-slate-800/50">Track</a>
+                <a href="/booking" class="block py-3 text-ocean font-bold border-b border-slate-800/50">Book
+                    Shipment</a>
+                {% if session.get('admin_logged_in') %}
+                <a href="/admin/dashboard"
+                    class="block py-3 text-amber-500 font-bold border-b border-slate-800/50">Dashboard</a>
+                {% endif %}
+                {% if session.get('user') %}
+                <a href="/profile" class="block py-3 text-slate-300 border-b border-slate-800/50">Profile ({{
+                    session['user']['username'] }})</a>
+                <a href="/logout" class="block py-3 text-red-500 font-bold border-b border-slate-800/50">Logout</a>
+                {% endif %}
+
+            </div>
+        </div>
+    </nav>
+    {% if session.get('user') or session.get('admin_logged_in') %}
+    <!-- Chat Widget -->
+    <div id="chatWidget" class="fixed bottom-6 right-6 z-[70]">
+        <button id="chatToggleBtn"
+            class="h-14 w-14 rounded-full bg-ocean text-white shadow-2xl hover:bg-sky-500 transition-all flex items-center justify-center">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 4v-4z">
+                </path>
+            </svg>
+        </button>
+
+        <div id="chatPanel"
+            class="hidden opacity-0 translate-y-2 absolute bottom-16 right-0 w-[92vw] max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden transition-all duration-200">
+            <div class="px-4 py-3 bg-deep text-white flex items-center justify-between">
+                <div>
+                    <h3 class="text-sm font-bold">Live Chat</h3>
+                    <p class="text-[11px] text-slate-300">{% if session.get('admin_logged_in') %}Admin Console{% else
+                        %}Support Team{% endif %}</p>
+                </div>
+                <button id="chatCloseBtn" class="text-slate-300 hover:text-white text-lg leading-none">&times;</button>
+            </div>
+
+            {% if session.get('admin_logged_in') %}
+            <div class="p-3 border-b border-slate-100">
+                <label class="block text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1">Select
+                    User</label>
+                <select id="chatUserSelect"
+                    class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:ring-2 focus:ring-ocean/20 outline-none"></select>
+            </div>
+            {% endif %}
+
+            <div id="chatMessages" class="h-80 overflow-y-auto p-3 space-y-2 bg-slate-50"></div>
+
+            <div class="p-3 border-t border-slate-100 flex gap-2">
+                <input id="chatMessageInput" type="text" placeholder="Type your message..."
+                    class="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:ring-2 focus:ring-ocean/20 outline-none">
+                <button id="chatSendBtn"
+                    class="px-4 py-2 bg-ocean text-white rounded-lg text-sm font-bold hover:bg-sky-500 transition-colors">Send</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Flash Messages -->
+    <div class="fixed top-24 left-1/2 -translate-x-1/2 z-[60] w-full max-w-md px-4 pointer-events-none">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div
+            class="message-toast bg-white border-l-4 rounded-lg shadow-2xl p-4 mb-3 flex items-center justify-between pointer-events-auto transform transition-all duration-500 animate-in fade-in slide-in-from-top-4 
+                    {% if category == 'error' %}border-red-500 text-red-700{% else %}border-ocean text-slate-700{% endif %}">
+            <div class="flex items-center gap-3">
+                {% if category == 'error' %}
+                <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                {% else %}
+                <svg class="w-5 h-5 text-ocean" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                {% endif %}
+                <span class="text-sm font-medium">{{ message }}</span>
+            </div>
+            <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+        {% endfor %}
+        <script>
+            setTimeout(() => {
+                document.querySelectorAll('.message-toast').forEach(el => {
+                    el.classList.add('opacity-0', '-translate-y-4');
+                    setTimeout(() => el.remove(), 500);
+                });
+            }, 5000);
+        </script>
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="flex-grow pt-20">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-deep text-slate-300 py-12 mt-auto border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+                <h3 class="text-white text-lg font-bold mb-4">CargoFish</h3>
+                <p class="text-sm">Premium logistics for the most delicate cargo. We transport freshness across oceans.
+                </p>
+            </div>
+            <div>
+                <h4 class="text-white font-semibold mb-3">Services</h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="#" class="hover:text-ocean">Refrigerated Transport</a></li>
+                    <li><a href="#" class="hover:text-ocean">Live Fish Cargo</a></li>
+                    <li><a href="#" class="hover:text-ocean">Global Supply Chain</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-semibold mb-3">Company</h4>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="#" class="hover:text-ocean">About Us</a></li>
+                    <li><a href="#" class="hover:text-ocean">Carriers</a></li>
+
+                    <li><a id="footerContactLink" href="mailto:odewunmimohammed@gmail.com"
+                            class="hover:text-ocean">Contact</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-semibold mb-3">Newsletter</h4>
+                <form id="newsletterForm" class="flex gap-2" data-contact-email="odewunmimohammed@gmail.com">
+                    <input id="newsletterEmail" type="email" name="email" required placeholder="Your email"
+                        class="bg-slate-800 text-white px-3 py-2 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-ocean">
+                    <button type="submit" class="bg-ocean text-white px-4 py-2 rounded-lg hover:bg-sky-500">Go</button>
+                </form>
+            </div>
+        </div>
+        <div class="text-center mt-12 pt-8 border-t border-slate-800 text-sm flex flex-col items-center gap-2">
+            <span>&copy; 2026 CargoFish Logistics. All rights reserved.</span>
+            <a href="/admin/login"
+                class="text-[10px] text-slate-700 hover:text-slate-500 transition-colors uppercase tracking-widest">Admin
+                Access</a>
+        </div>
+    </footer>
+
+    <script>
+        const notifPanel = document.getElementById('notifPanel');
+        const notifBadge = document.getElementById('notifBadge');
+        const notifBadgeMobile = document.getElementById('notifBadgeMobile');
+        const notifList = document.getElementById('notifList');
+        window.lastNotifId = null; // initialise before first fetch
+
+        function toggleNotificationPanel() {
+            const isHidden = notifPanel.classList.contains('hidden');
+            if (isHidden) {
+                notifPanel.classList.remove('hidden');
+                setTimeout(() => {
+                    notifPanel.classList.remove('scale-95', 'opacity-0');
+                }, 10);
+                fetchNotifications();
+            } else {
+                notifPanel.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    notifPanel.classList.add('hidden');
+                }, 200);
+            }
+        }
+
+        async function fetchNotifications() {
+            const isAdmin = JSON.parse('{{ "true" if session.get("admin_logged_in") else "false" }}');
+            const url = isAdmin ? '/api/notifications/admin' : '/api/notifications';
+
+            try {
+                const response = await fetch(url);
+                const notifications = await response.json();
+                renderNotifications(notifications);
+                updateBadge(notifications);
+            } catch (error) {
+                console.error('Error fetching notifications:', error);
+            }
+        }
+
+        function renderNotifications(notifications) {
+            if (notifications.length === 0) {
+                notifList.innerHTML = '<div class="p-8 text-center text-slate-400 italic text-xs">No notifications yet</div>';
+                return;
+            }
+
+            notifList.innerHTML = notifications.map(n => {
+                const timePart = n.date ? (n.date.split(' ')[1] || n.date) : '';
+                const unreadClass = n.read ? '' : 'bg-sky-50';
+                return `
+                <div class="p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer ${unreadClass}" data-unread="${!n.read}" onclick="markAsRead('${n.id}')">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-xs font-bold text-deep">${n.title || ''}</span>
+                        <span class="text-[10px] text-slate-400">${timePart}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-600 line-clamp-2">${n.message || ''}</p>
+                </div>`;
+            }).join('');
+        }
+
+        function updateBadge(notifications) {
+            const unreadCount = notifications.filter(n => !n.read).length;
+            const bD = document.getElementById('notifBadge');
+            const bM = document.getElementById('notifBadgeMobile');
+            if (unreadCount > 0) {
+                if (bD) bD.classList.remove('hidden');
+                if (bM) bM.classList.remove('hidden');
+                if (window.lastNotifId !== notifications[0].id) {
+                    showPushNotification(notifications[0]);
+                    window.lastNotifId = notifications[0].id;
+                }
+            } else {
+                if (bD) bD.classList.add('hidden');
+                if (bM) bM.classList.add('hidden');
+            }
+        }
+
+        async function markAsRead(id) {
+            const isAdmin = JSON.parse('{{ "true" if session.get("admin_logged_in") else "false" }}');
+            const url = isAdmin ? '/api/notifications/admin/read' : '/api/notifications/read';
+
+            await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            fetchNotifications();
+        }
+
+        function markAllRead() {
+            const unread = document.querySelectorAll('[data-unread="true"]');
+            unread.forEach(el => el.click());
+        }
+
+        function showPushNotification(notif) {
+            if (!("Notification" in window)) return;
+            if (Notification.permission === "granted") {
+                new Notification(notif.title, { body: notif.message });
+            }
+        }
+
+        if ("Notification" in window && Notification.permission !== "denied" && Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+
+        const isLoggedIn = JSON.parse('{{ "true" if session.get("user") or session.get("admin_logged_in") else "false" }}');
+        if (isLoggedIn) {
+            setInterval(fetchNotifications, 15000);
+            fetchNotifications();
+        }
+        const chatWidget = document.getElementById('chatWidget');
+        if (chatWidget) {
+            const chatToggleBtn = document.getElementById('chatToggleBtn');
+            const chatPanel = document.getElementById('chatPanel');
+            const chatCloseBtn = document.getElementById('chatCloseBtn');
+            const chatMessagesEl = document.getElementById('chatMessages');
+            const chatInput = document.getElementById('chatMessageInput');
+            const chatSendBtn = document.getElementById('chatSendBtn');
+            const chatUserSelect = document.getElementById('chatUserSelect');
+            const isChatAdmin = JSON.parse('{{ "true" if session.get("admin_logged_in") else "false" }}');
+            let activeConversationUser = isChatAdmin ? '' : '{{ session["user"]["username"] if session.get("user") else "" }}';
+            let chatPollTimer = null;
+
+            function escapeChatHtml(text) {
+                return (text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+
+            function formatChatTime(value) {
+                if (!value) return '';
+                const parts = value.split(' ');
+                return parts.length > 1 ? parts[1].slice(0, 5) : value;
+            }
+
+            function renderChatMessages(messages) {
+                if (!messages || messages.length === 0) {
+                    chatMessagesEl.innerHTML = '<div class="text-xs text-slate-400 italic text-center py-10">No messages yet.</div>';
+                    return;
+                }
+
+                chatMessagesEl.innerHTML = messages.map((m) => {
+                    const mine = isChatAdmin ? m.sender === 'admin' : m.sender !== 'admin';
+                    const bubbleClass = mine ? 'bg-ocean text-white ml-10' : 'bg-white text-slate-700 mr-10 border border-slate-200';
+                    const timeClass = mine ? 'text-sky-100' : 'text-slate-400';
+                    return `
+                        <div class="flex ${mine ? 'justify-end' : 'justify-start'}">
+                            <div class="max-w-[80%] rounded-2xl px-3 py-2 ${bubbleClass}">
+                                <p class="text-sm whitespace-pre-wrap break-words">${escapeChatHtml(m.message)}</p>
+                                <div class="text-[10px] mt-1 ${timeClass}">${formatChatTime(m.date)}</div>
+                            </div>
+                        </div>`;
+                }).join('');
+
+                chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+            }
+
+            async function loadChatUsers() {
+                if (!isChatAdmin || !chatUserSelect) return;
+                try {
+                    const response = await fetch('/api/chat/conversations');
+                    const data = await response.json();
+                    if (!Array.isArray(data)) return;
+
+                    chatUserSelect.innerHTML = data.map((u) => {
+                        const unread = u.unread > 0 ? ` (${u.unread})` : '';
+                        return `<option value="${u.username}">${u.full_name} @${u.username}${unread}</option>`;
+                    }).join('');
+
+                    if (!activeConversationUser && data.length > 0) {
+                        activeConversationUser = data[0].username;
+                        chatUserSelect.value = activeConversationUser;
+                    } else if (activeConversationUser) {
+                        chatUserSelect.value = activeConversationUser;
+                    }
+                } catch (error) {
+                    console.error('Error loading chat users:', error);
+                }
+            }
+
+            async function loadChatMessages() {
+                try {
+                    let url = '/api/chat/messages';
+                    if (isChatAdmin) {
+                        if (!activeConversationUser) {
+                            renderChatMessages([]);
+                            return;
+                        }
+                        url += `?username=${encodeURIComponent(activeConversationUser)}`;
+                    }
+                    const response = await fetch(url);
+                    const data = await response.json();
+                    if (Array.isArray(data)) renderChatMessages(data);
+                } catch (error) {
+                    console.error('Error loading chat messages:', error);
+                }
+            }
+
+            async function sendChatMessage() {
+                const text = (chatInput.value || '').trim();
+                if (!text) return;
+
+                const payload = { message: text };
+                if (isChatAdmin) payload.username = activeConversationUser;
+
+                try {
+                    const response = await fetch('/api/chat/send', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    if (result.status === 'success') {
+                        chatInput.value = '';
+                        await loadChatMessages();
+                        if (isChatAdmin) await loadChatUsers();
+                    } else {
+                        alert(result.message || 'Unable to send message.');
+                    }
+                } catch (error) {
+                    console.error('Error sending chat message:', error);
+                }
+            }
+
+            function openChat() {
+                chatPanel.classList.remove('hidden');
+                setTimeout(() => chatPanel.classList.remove('opacity-0', 'translate-y-2'), 10);
+                if (isChatAdmin) {
+                    loadChatUsers().then(loadChatMessages);
+                } else {
+                    loadChatMessages();
+                }
+                if (chatPollTimer) clearInterval(chatPollTimer);
+                chatPollTimer = setInterval(() => {
+                    if (isChatAdmin) loadChatUsers();
+                    loadChatMessages();
+                }, 5000);
+            }
+
+            function closeChat() {
+                chatPanel.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => chatPanel.classList.add('hidden'), 200);
+                if (chatPollTimer) {
+                    clearInterval(chatPollTimer);
+                    chatPollTimer = null;
+                }
+            }
+
+            chatToggleBtn.addEventListener('click', () => {
+                if (chatPanel.classList.contains('hidden')) openChat();
+                else closeChat();
+            });
+            chatCloseBtn.addEventListener('click', closeChat);
+            chatSendBtn.addEventListener('click', sendChatMessage);
+            chatInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') sendChatMessage();
+            });
+
+            if (chatUserSelect) {
+                chatUserSelect.addEventListener('change', () => {
+                    activeConversationUser = chatUserSelect.value;
+                    loadChatMessages();
+                });
+            }
+        }
+        // Mobile Menu Logic
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const hamburgerIcon = document.getElementById('hamburgerIcon');
+        const closeIcon = document.getElementById('closeIcon');
+
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isHidden = mobileMenu.classList.contains('hidden');
+                if (isHidden) {
+                    mobileMenu.classList.remove('hidden');
+                    hamburgerIcon.classList.add('hidden');
+                    closeIcon.classList.remove('hidden');
+                } else {
+                    mobileMenu.classList.add('hidden');
+                    hamburgerIcon.classList.remove('hidden');
+                    closeIcon.classList.add('hidden');
+                }
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            const desMenu = document.getElementById('notificationMenuDesktop');
+            const mobBtn = document.getElementById('mobileMenuBtn');
+            const mobNotifBtn = document.getElementById('notificationMenuMobile');
+
+            // Close notif panel if clicking outside desktop/mobile notif buttons
+            const clickedInsideNotif = (desMenu && desMenu.contains(e.target)) || (mobNotifBtn && mobNotifBtn.contains(e.target));
+            if (!clickedInsideNotif && !notifPanel.classList.contains('hidden')) {
+                notifPanel.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => notifPanel.classList.add('hidden'), 200);
+            }
+
+            // Close mobile menu if clicking outside
+            if (mobileMenu && !mobileMenu.contains(e.target) && mobBtn && !mobBtn.contains(e.target) && !mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.add('hidden');
+                hamburgerIcon.classList.remove('hidden');
+                closeIcon.classList.add('hidden');
+            }
+        });
+    </script>
+    <script>
+        (function () {
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function () {
+                    navigator.serviceWorker.register('/sw.js').catch(function () { });
+                });
+            }
+        })();
+    </script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>
