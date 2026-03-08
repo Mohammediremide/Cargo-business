@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "cargo_fish_app/app.py", "use": "@vercel/python" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "cargo_fish_app/app.py" }
+  ]
+}

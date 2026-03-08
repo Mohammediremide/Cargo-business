@@ -6,6 +6,7 @@ import uuid
 import hmac
 import hashlib
 import requests
+import shutil
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -45,14 +46,31 @@ if not KORA_SECRET_KEY:
 if not BREVO_API_KEY:
     print("\n[!] WARNING: BREVO_API_KEY is missing. Emails will not be sent.\n")
 
-DATA_FILE = 'bookings.json'
-PENDING_FILE = 'pending_payments.json'
-WITHDRAWAL_FILE = 'withdrawals.json'
-DELIVERED_FILE = 'delivered_bookings.json'
-CONFIG_FILE = 'config.json'
-USER_FILE = 'users.json'
-NOTIFICATION_FILE = 'notifications.json'
-CHAT_FILE = 'chat_messages.json'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+IS_VERCEL = os.environ.get('VERCEL') == '1'
+DATA_DIR = os.path.join('/tmp', 'cargo_fish_data') if IS_VERCEL else BASE_DIR
+
+if IS_VERCEL:
+    os.makedirs(DATA_DIR, exist_ok=True)
+
+
+def data_path(filename):
+    path = os.path.join(DATA_DIR, filename)
+    if IS_VERCEL and not os.path.exists(path):
+        seed = os.path.join(BASE_DIR, filename)
+        if os.path.exists(seed):
+            shutil.copy(seed, path)
+    return path
+
+
+DATA_FILE = data_path('bookings.json')
+PENDING_FILE = data_path('pending_payments.json')
+WITHDRAWAL_FILE = data_path('withdrawals.json')
+DELIVERED_FILE = data_path('delivered_bookings.json')
+CONFIG_FILE = data_path('config.json')
+USER_FILE = data_path('users.json')
+NOTIFICATION_FILE = data_path('notifications.json')
+CHAT_FILE = data_path('chat_messages.json')
 
 DEFAULT_PRICING = {
     "Frozen Fish (Bulk)": 150,
@@ -1572,6 +1590,8 @@ def sw():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
+
+
 
 
 
