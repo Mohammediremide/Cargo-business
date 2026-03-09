@@ -19,7 +19,11 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY') or os.urandom(24)
 
 # Config
-KORA_SECRET_KEY = os.environ.get('KORA_SECRET_KEY') or os.environ.get('KORAPAY_SECRET_KEY')
+KORA_SECRET_KEY = (
+    os.environ.get('KORA_SECRET_KEY')
+    or os.environ.get('KORAPAY_SECRET_KEY')
+    or os.environ.get('KORA_API_KEY')
+)
 KORA_PUBLIC_KEY = os.environ.get('KORA_PUBLIC_KEY') or os.environ.get('KORAPAY_PUBLIC_KEY')
 KORA_WEBHOOK_SECRET = os.environ.get('KORA_WEBHOOK_SECRET') or KORA_SECRET_KEY
 KORA_AMOUNT_MULTIPLIER = float(os.environ.get('KORA_AMOUNT_MULTIPLIER', '1'))
@@ -41,7 +45,7 @@ ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', '123456')
 
 if not KORA_SECRET_KEY:
     print("\n[!] WARNING: Kora API secret key is missing.")
-    print("Please set KORA_SECRET_KEY (or KORAPAY_SECRET_KEY) environment variables.\n")
+    print("Please set KORA_SECRET_KEY (or KORAPAY_SECRET_KEY / KORA_API_KEY) environment variables.\n")
 
 if not BREVO_API_KEY:
     print("\n[!] WARNING: BREVO_API_KEY is missing. Emails will not be sent.\n")
@@ -314,6 +318,15 @@ def user_login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user' not in session:
+            # For API/XHR requests, return JSON so frontend can show the real error.
+            wants_json = (
+                request.path.startswith('/kora/')
+                or request.is_json
+                or request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+                or 'application/json' in request.headers.get('Accept', '')
+            )
+            if wants_json:
+                return jsonify({"status": "error", "message": "Please log in to continue."}), 401
             flash("Please log in to continue.", "error")
             return redirect(url_for('user_login'))
         return f(*args, **kwargs)

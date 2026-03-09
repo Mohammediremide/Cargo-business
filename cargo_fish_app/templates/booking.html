@@ -651,11 +651,29 @@
 
         fetch('/kora/initialize', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             body: JSON.stringify(Object.assign({ items }, routeData))
         })
-            .then(res => res.json())
-            .then(data => {
+            .then(async (res) => {
+                const raw = await res.text();
+                let data = null;
+                try {
+                    data = raw ? JSON.parse(raw) : null;
+                } catch (e) {
+                    data = null;
+                }
+                if (!res.ok) {
+                    const serverMsg = (data && data.message) ? data.message : (raw || `Request failed (${res.status})`);
+                    throw new Error(serverMsg);
+                }
+                return data || {};
+            })
+            .then((data) => {
                 if (data.status === 'success' && data.checkout_url) {
                     window.location.href = data.checkout_url;
                 } else {
@@ -665,7 +683,7 @@
             })
             .catch(err => {
                 console.error(err);
-                alert("Error initializing payment.");
+                alert("Error initializing payment: " + (err.message || "Please try again."));
                 resetSubmitBtn();
             });
     }
