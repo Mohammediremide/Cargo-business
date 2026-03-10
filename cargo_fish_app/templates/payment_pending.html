@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment Pending - CargoFish{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-slate-50 py-16">
+    <div class="max-w-2xl mx-auto px-4">
+        <div class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
+            <div class="bg-deep p-6 border-b border-slate-800">
+                <h1 class="text-2xl font-bold text-white">Payment Pending</h1>
+                <p class="text-slate-300 text-sm mt-1">We're confirming your bank transfer with Kora.</p>
+            </div>
+
+            <div class="p-8">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="h-10 w-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-sm font-bold text-deep">Awaiting Bank Confirmation</div>
+                        <div class="text-xs text-slate-500">Reference: <span id="pendingRef"
+                                data-ref="{{ reference }}" class="font-mono">{{ reference }}</span></div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    <div class="text-sm text-slate-700 mb-2" id="statusLine">Checking payment status...</div>
+                    <div class="text-xs text-slate-500" id="statusHint">This can take a few minutes for bank transfer.</div>
+                </div>
+
+                <div class="mt-6 flex flex-col sm:flex-row gap-3">
+                    <button id="checkNowBtn"
+                        class="px-5 py-2 rounded-lg bg-ocean text-white text-sm font-semibold hover:bg-sky-500 transition-colors">
+                        Check Now
+                    </button>
+                    <a href="/booking"
+                        class="px-5 py-2 rounded-lg border border-slate-200 text-slate-600 text-sm font-semibold hover:border-slate-300 transition-colors text-center">
+                        Back to Booking
+                    </a>
+                </div>
+
+                <div class="mt-6 text-xs text-slate-500">
+                    If your transfer was successful but still pending, keep this page open and we will update it automatically.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const refEl = document.getElementById('pendingRef');
+        const checkNowBtn = document.getElementById('checkNowBtn');
+        const statusLine = document.getElementById('statusLine');
+        const statusHint = document.getElementById('statusHint');
+        const reference = refEl ? refEl.dataset.ref : null;
+
+        let attempts = 0;
+        const maxAttempts = 36; // 3 minutes at 5s interval
+        const intervalMs = 5000;
+        let timer = null;
+
+        function setStatus(text, hint) {
+            statusLine.textContent = text;
+            if (hint) statusHint.textContent = hint;
+        }
+
+        async function checkStatus() {
+            if (!reference) return;
+            attempts += 1;
+            try {
+                const res = await fetch(`/kora/status?reference=${encodeURIComponent(reference)}`, {
+                    headers: { 'Accept': 'application/json' },
+                    credentials: 'same-origin'
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    setStatus(data.message || 'Unable to verify payment right now.', 'Please try again in a moment.');
+                    return;
+                }
+
+                if (data.status === 'success' && data.booking_id) {
+                    window.location.href = `/receipt/${data.booking_id}`;
+                    return;
+                }
+
+                if (data.status === 'pending') {
+                    setStatus('Payment is still pending...', 'Waiting for bank confirmation.');
+                } else if (data.status === 'failed') {
+                    setStatus('Payment not completed.', `Status: ${data.charge_status || 'unknown'}.`);
+                } else {
+                    setStatus('Waiting for confirmation...', 'Please keep this page open.');
+                }
+            } catch (err) {
+                setStatus('Network error while checking payment.', 'Please try again.');
+            }
+
+            if (attempts >= maxAttempts) {
+                clearInterval(timer);
+                setStatus('Still pending after a few minutes.', 'You can keep checking manually or contact support.');
+            }
+        }
+
+        checkNowBtn.addEventListener('click', () => {
+            checkStatus();
+        });
+
+        if (reference) {
+            timer = setInterval(checkStatus, intervalMs);
+            checkStatus();
+        }
+    })();
+</script>
+{% endblock %}

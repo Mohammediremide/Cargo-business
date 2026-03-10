@@ -28,6 +28,13 @@ KORA_PUBLIC_KEY = os.environ.get('KORA_PUBLIC_KEY') or os.environ.get('KORAPAY_P
 KORA_WEBHOOK_SECRET = os.environ.get('KORA_WEBHOOK_SECRET') or KORA_SECRET_KEY
 KORA_AMOUNT_MULTIPLIER = float(os.environ.get('KORA_AMOUNT_MULTIPLIER', '1'))
 KORA_CURRENCY = os.environ.get('KORA_CURRENCY', 'NGN')
+KORA_CHANNELS = [
+    ch.strip().lower()
+    for ch in os.environ.get('KORA_CHANNELS', 'bank_transfer').split(',')
+    if ch.strip()
+]
+if not KORA_CHANNELS:
+    KORA_CHANNELS = ['bank_transfer']
 KORA_API_BASE = 'https://api.korapay.com/merchant/api/v1'
 KORA_REDIRECT_URL = os.environ.get('KORA_REDIRECT_URL')
 KORA_WEBHOOK_URL = os.environ.get('KORA_WEBHOOK_URL')
@@ -1044,13 +1051,28 @@ def kora_initialize():
         remove_pending_payment(reference)
         return jsonify({"status": "error", "message": "Invalid payment amount."}), 400
 
+    channels_for_request = list(KORA_CHANNELS)
+    if (
+        KORA_CURRENCY.upper() == 'NGN'
+        and 'bank_transfer' in channels_for_request
+        and not (100 <= amount_for_kora <= 50000)
+    ):
+        if len(channels_for_request) > 1:
+            channels_for_request = [c for c in channels_for_request if c != 'bank_transfer']
+        else:
+            remove_pending_payment(reference)
+            return jsonify({
+                "status": "error",
+                "message": "Bank transfer amount must be between NGN100 and NGN50000. Reduce amount or enable card channel in Kora and set KORA_CHANNELS."
+            }), 400
+
     payload = {
         "amount": amount_for_kora,
         "currency": KORA_CURRENCY,
         "reference": reference,
         "redirect_url": KORA_REDIRECT_URL or url_for('kora_redirect', _external=True),
         "notification_url": KORA_WEBHOOK_URL or url_for('kora_webhook', _external=True),
-        "channels": ["card", "bank_transfer", "pay_with_bank"],
+        "channels": channels_for_request,
         "customer": {
             "name": customer_name,
             "email": customer_email
@@ -1122,11 +1144,63 @@ def kora_redirect():
         return redirect(url_for('booking' if 'user' in session else 'index'))
 
     if charge_status in ('pending', 'processing'):
-        flash("Payment is pending. We'll notify you once it is confirmed.", "success")
-        return redirect(url_for('booking' if 'user' in session else 'index'))
+        flash("Payment is pending. We'll confirm it as soon as the bank completes the transfer.", "success")
+        return redirect(url_for('payment_pending', reference=reference))
 
     flash(f"Payment not completed (status: {charge_status or 'unknown'}).", "error")
     return redirect(url_for('booking' if 'user' in session else 'index'))
+
+@app.route('/payment/pending')
+@user_login_required
+def payment_pending():
+    reference = request.args.get('reference')
+    if not reference:
+        flash("Missing payment reference.", "error")
+        return redirect(url_for('booking'))
+    return render_template('payment_pending.html', reference=reference, user=session['user'])
+
+@app.route('/kora/status')
+@user_login_required
+def kora_status():
+    reference = request.args.get('reference')
+    if not reference:
+        return jsonify({"status": "error", "message": "Missing payment reference."}), 400
+
+    existing = get_booking_by_reference(reference)
+    if existing:
+        return jsonify({
+            "status": "success",
+            "charge_status": "success",
+            "booking_id": existing.get('id')
+        })
+
+    verify_data = verify_kora_charge(reference)
+    if not verify_data.get('status'):
+        return jsonify({
+            "status": "error",
+            "message": verify_data.get('message') or "Payment verification failed."
+        }), 400
+
+    charge_data = verify_data.get('data', {})
+    charge_status = (charge_data.get('status') or '').lower()
+
+    if charge_status == 'success':
+        booking_id = finalize_kora_booking(reference, charge_data)
+        if booking_id:
+            return jsonify({
+                "status": "success",
+                "charge_status": "success",
+                "booking_id": booking_id
+            })
+        return jsonify({
+            "status": "error",
+            "message": "Payment confirmed, but booking data was missing."
+        }), 500
+
+    if charge_status in ('pending', 'processing'):
+        return jsonify({"status": "pending", "charge_status": charge_status})
+
+    return jsonify({"status": "failed", "charge_status": charge_status or "unknown"})
 
 
 @app.route('/kora/webhook', methods=['POST'])
@@ -1159,6 +1233,14 @@ def kora_webhook():
         finalize_kora_booking(reference, data_obj)
 
     return "", 200
+
+
+@app.route('/kora/webhook/test', methods=['GET'])
+def kora_webhook_test():
+    return jsonify({
+        "status": "ok",
+        "message": "Webhook endpoint is reachable."
+    }), 200
 
 
 def send_booking_emails(booking_data):

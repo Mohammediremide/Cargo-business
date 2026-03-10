@@ -1,0 +1,1 @@
+-r cargo_fish_app/requirements.txt
