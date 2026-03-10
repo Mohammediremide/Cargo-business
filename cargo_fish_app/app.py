@@ -1120,6 +1120,9 @@ def kora_initialize():
             pending_data[key] = data.get(key)
 
     add_pending_payment(reference, pending_data)
+    # In-app notifications right after booking is created
+    add_notification(session['user']['username'], "Booking Initiated", f"Your booking {booking_id} has been created. Complete payment to confirm.")
+    add_notification("admin", "New Booking Initiated", f"Booking {booking_id} started by {session['user']['username']} (NGN {pending_data['total_price']}).")
 
     amount_for_kora = int(round(total * KORA_AMOUNT_MULTIPLIER))
     if amount_for_kora <= 0:
