@@ -1,6 +1,6 @@
 [project]
 name = "cargo"
-version = "0.1.0"
+version = "0.1.1"
 description = "Cargo Fish App deployment for Vercel"
 requires-python = ">=3.10"
 dependencies = [
