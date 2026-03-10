@@ -8,6 +8,7 @@ dependencies = [
   "requests",
   "flask-mail",
   "python-dotenv",
+  "psycopg[binary]",
 ]
 
 [build-system]

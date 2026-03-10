@@ -2,6 +2,8 @@ import os
 from dotenv import load_dotenv
 load_dotenv() # Load variables from .env file
 import json
+import psycopg
+from psycopg.types.json import Json
 import uuid
 import hmac
 import hashlib
@@ -61,6 +63,35 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 IS_VERCEL = os.environ.get('VERCEL') == '1'
 DATA_DIR = os.path.join('/tmp', 'cargo_fish_data') if IS_VERCEL else BASE_DIR
 
+# Database (Neon/Postgres)
+DATABASE_URL = (
+    os.environ.get('DATABASE_URL')
+    or os.environ.get('POSTGRES_URL')
+    or os.environ.get('POSTGRES_PRISMA_URL')
+    or os.environ.get('NEON_DATABASE_URL')
+)
+USE_DB = bool(DATABASE_URL)
+_DB_READY = False
+
+def _db_connect():
+    return psycopg.connect(DATABASE_URL, autocommit=True, connect_timeout=5)
+
+def _db_ensure():
+    global _DB_READY
+    if _DB_READY or not USE_DB:
+        return
+    with _db_connect() as conn:
+        conn.execute(
+            """
+            create table if not exists kv_store (
+                key text primary key,
+                value jsonb not null,
+                updated_at timestamptz not null default now()
+            )
+            """
+        )
+    _DB_READY = True
+
 if IS_VERCEL:
     os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -72,6 +103,9 @@ def data_path(filename):
         if os.path.exists(seed):
             shutil.copy(seed, path)
     return path
+
+def _data_key(filename):
+    return os.path.basename(filename)
 
 
 DATA_FILE = data_path('bookings.json')
@@ -92,6 +126,33 @@ DEFAULT_PRICING = {
 
 # Helper Functions
 def load_json(filename, default=None):
+    if USE_DB:
+        _db_ensure()
+        key = _data_key(filename)
+        with _db_connect() as conn:
+            row = conn.execute(
+                "select value from kv_store where key = %s",
+                (key,)
+            ).fetchone()
+        if row is not None:
+            value = row[0]
+            if isinstance(value, str):
+                try:
+                    return json.loads(value)
+                except json.JSONDecodeError:
+                    return default if default is not None else {}
+            return value
+        # Seed from existing local file if present
+        if os.path.exists(filename):
+            with open(filename, 'r') as f:
+                try:
+                    data = json.load(f)
+                except json.JSONDecodeError:
+                    data = default if default is not None else {}
+            save_json(filename, data)
+            return data
+        return default if default is not None else {}
+
     if not os.path.exists(filename):
         return default if default is not None else {}
     with open(filename, 'r') as f:
@@ -101,6 +162,20 @@ def load_json(filename, default=None):
             return default if default is not None else {}
 
 def save_json(filename, data):
+    if USE_DB:
+        _db_ensure()
+        key = _data_key(filename)
+        with _db_connect() as conn:
+            conn.execute(
+                """
+                insert into kv_store (key, value, updated_at)
+                values (%s, %s, now())
+                on conflict (key)
+                do update set value = excluded.value, updated_at = now()
+                """,
+                (key, Json(data))
+            )
+        return
     with open(filename, 'w') as f:
         json.dump(data, f, indent=4)
 
