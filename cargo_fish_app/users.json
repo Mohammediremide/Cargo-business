@@ -3,7 +3,7 @@
         "full_name": "Adebanjo adesewa",
         "username": "Sewa",
         "email": "odewunmiire@gmail.com",
-        "password": "MohMik2104@",
+        "password": "scrypt:32768:8:1$0u8gKs5hhM4R97Lp$d97857dfd9dd863480d156e5d7074a7714debcd90c730ea1a15df3d0cebb3faac3fafd4c3f3509d344b399ceedcdd1739572b9d2716c45251a1ec2ff9acae1e8",
         "is_verified": true,
         "is_admin": false,
         "country_code": "NG",
