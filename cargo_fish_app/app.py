@@ -1,6 +1,8 @@
 import os
 from dotenv import load_dotenv
-load_dotenv() # Load variables from .env file
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Load .env file relative to this script
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 import json
 import psycopg
 from psycopg.types.json import Json
@@ -15,6 +17,7 @@ from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for, flash
+from werkzeug.security import generate_password_hash, check_password_hash
 import random
 
 app = Flask(__name__)
@@ -59,7 +62,6 @@ if not KORA_SECRET_KEY:
 if not BREVO_API_KEY:
     print("\n[!] WARNING: BREVO_API_KEY is missing. Emails will not be sent.\n")
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 IS_VERCEL = os.environ.get('VERCEL') == '1'
 DATA_DIR = os.path.join('/tmp', 'cargo_fish_data') if IS_VERCEL else BASE_DIR
 
@@ -676,54 +678,12 @@ def user_signup():
         if username in users:
             flash("Username already exists.", "error")
             return render_template('signup.html')
-
-        user_data = {
-            "full_name": full_name,
-            "username": username,
-            "email": email,
-            "password": password, # In a real app, use hashing!
-            "is_verified": False,
-            "is_admin": False,
-            "country_code": country_code,
-            "country_name": country_name,
-            "joined_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "last_active": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        }
-        save_user(user_data)
-
-        otp = str(random.randint(100000, 999999))
-        session['pending_user'] = username
-        session['login_otp'] = otp
-        session['signup_otp_sent_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        # Send Welcome & OTP Email
-        subject = "Welcome to CargoFish - Your Verification Code"
-        html = f"<h2>Welcome, {full_name}!</h2><p>Thank you for joining CargoFish. Your authentication code is: <b style='font-size: 24px; letter-spacing: 2px;'>{otp}</b></p><p>Please enter this code to complete your registration and log in.</p>"
-        send_email(email, subject, html)
-
-        # Send Admin Alert
-        admin_subject = f"New User Signup: {full_name}"
-        admin_html = f"<h3>New Customer!</h3><p><b>Name:</b> {full_name}<br><b>Username:</b> {username}<br><b>Email:</b> {email}</p>"
-        send_email(ADMIN_EMAIL, admin_subject, admin_html)
-
-        # Add In-App Notifications
-        add_notification(username, "Welcome!", f"Welcome to CargoFish, {full_name}! Thanks for joining us.")
-        add_notification("admin", "New Registration", f"User {username} ({full_name}) has joined the platform.")
-
-        flash("Registration successful! An authentication code has been sent to your email.", "success")
-        return redirect(url_for('verify_otp'))
-    return render_template('signup.html')
-
-    users = load_users()
-    if username in users:
-        flash("Username already exists.", "error")
-        return render_template('signup.html')
             
         user_data = {
             "full_name": full_name,
             "username": username,
             "email": email,
-            "password": password, # In a real app, use hashing!
+            "password": generate_password_hash(password),
             "is_verified": False,
             "is_admin": False,
             "country_code": country_code,
@@ -764,7 +724,7 @@ def user_login():
 
         users = load_users()
         user = users.get(username)
-        if user and user['password'] == password:
+        if user and check_password_hash(user['password'], password):
             user['last_active'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             save_user(user)
             session['user'] = user
@@ -890,7 +850,7 @@ def forgot_password():
                 flash("Account not found. Request a new OTP.", "error")
                 return render_template('forgot_password.html', step='request')
 
-            user['password'] = new_password
+            user['password'] = generate_password_hash(new_password)
             save_user(user)
 
             session.pop('reset_username', None)
@@ -1178,15 +1138,15 @@ def kora_initialize():
         remove_pending_payment(reference)
         error_message = res_data.get('message') or res_data.get('error') or "Unable to initialize payment."
         
-        # Extract specific validation errors from Kora's nested 'data' object
+        # Detailed error parsing
         data_obj = res_data.get('data')
         if isinstance(data_obj, dict):
-            error_details = []
+            details = []
             for k, v in data_obj.items():
-                if isinstance(v, dict) and 'message' in v:
-                    error_details.append(f"{k}: {v['message']}")
-            if error_details:
-                error_message = error_message + " (" + "; ".join(error_details) + ")"
+                msg = v.get('message') if isinstance(v, dict) else str(v)
+                details.append(f"{k}: {msg}")
+            if details:
+                error_message = f"{error_message} ({'; '.join(details)})"
                 
         return jsonify({"status": "error", "message": error_message}), 400
 
@@ -1763,20 +1723,3 @@ def sw():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

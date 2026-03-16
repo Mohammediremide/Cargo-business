@@ -10,5 +10,17 @@
         "country_name": "Nigeria",
         "joined_at": "2026-02-28 01:19:18",
         "last_active": "2026-03-11 00:47:03"
+    },
+    "api_verifier": {
+        "full_name": "API Verifier",
+        "username": "api_verifier",
+        "email": "api_verifier@example.com",
+        "password": "scrypt:32768:8:1$afd4aRbK1hLsmvQt$588b6f5249fc770961e88f9480e03b1ad71cc2bba8dec5186b58f69ab0d416b1cb701355663efccbf55583fae96883372791f409cabbacec27682c867fd530f5",
+        "is_verified": false,
+        "is_admin": false,
+        "country_code": "NG",
+        "country_name": "Nigeria",
+        "joined_at": "2026-03-16 18:59:33",
+        "last_active": "2026-03-16 19:00:38"
     }
 }
