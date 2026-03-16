@@ -1,1 +1,20 @@
-{}
+{
+    "Sewa": [
+        {
+            "id": "05899444",
+            "title": "Booking Initiated",
+            "message": "Your booking CF-47212A31 has been created. Complete payment to confirm.",
+            "date": "2026-03-11 00:47:03",
+            "read": false
+        }
+    ],
+    "admin": [
+        {
+            "id": "f66328c8",
+            "title": "New Booking Initiated",
+            "message": "Booking CF-47212A31 started by Sewa (NGN 1020.0).",
+            "date": "2026-03-11 00:47:03",
+            "read": false
+        }
+    ]
+}
