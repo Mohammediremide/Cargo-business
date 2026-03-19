@@ -1,6 +1,7 @@
-const CACHE_NAME = "cargo-fish-v1";
+const CACHE_NAME = "cargo-fish-v2";
 const ASSETS = [
   "/",
+  "/signup",
   "/track",
   "/static/css/style.css",
   "/static/js/main.js",

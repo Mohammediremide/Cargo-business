@@ -1,7 +1,7 @@
 {
   "name": "CargoFish Logistics",
   "short_name": "CargoFish",
-  "start_url": "/track",
+  "start_url": "/signup",
   "scope": "/",
   "display": "standalone",
   "theme_color": "#0ea5e9",
